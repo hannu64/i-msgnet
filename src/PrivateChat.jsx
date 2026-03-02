@@ -12,18 +12,10 @@ const generateKey = async () => {
   return btoa(String.fromCharCode(...new Uint8Array(exported)));
 };
 
-// Import base64 string back to CryptoKey – safer version
+// Import base64 string back to CryptoKey
 const importKey = async (base64Key) => {
-  if (!base64Key || typeof base64Key !== 'string' || base64Key.trim() === '') {
-    console.warn('importKey called with empty/invalid base64');
-    return null;
-  }
   try {
-    const raw = Uint8Array.from(atob(base64Key.trim()), c => c.charCodeAt(0));
-    if (raw.length !== 32) { // AES-256 = 32 bytes
-      console.warn('Invalid key length:', raw.length);
-      return null;
-    }
+    const raw = Uint8Array.from(atob(base64Key), c => c.charCodeAt(0));
     return await crypto.subtle.importKey(
       'raw',
       raw,
@@ -50,44 +42,8 @@ function PrivateChat() {
   const [showPassphraseInput, setShowPassphraseInput] = useState(false);
   const [passphrase, setPassphrase] = useState('');
   const [passphraseError, setPassphraseError] = useState('');
-  const [showPassphrase, setShowPassphrase] = useState(false); // visibility toggle
+  const [showPassphrase, setShowPassphrase] = useState(false);
   const messagesEndRef = useRef(null);
-
-
-  const formatMessageTime = (timestamp) => {
-  if (!timestamp) return '';
-
-  const date = new Date(timestamp);
-  const now = new Date();
-  const isToday = date.toDateString() === now.toDateString();
-
-  const timeStr = date.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  });
-
-  if (isToday) {
-    return timeStr;  // "16:00"
-  }
-
-  // European DD.MM with short weekday
-  let datePart = date.toLocaleDateString('fi-FI', {
-    weekday: 'short',
-    day: '2-digit',
-    month: '2-digit'
-  });
-
-  // Add year if older than 7 days
-  const diffTime = Math.abs(now - date);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  if (diffDays > 7) {
-    datePart += `.${date.getFullYear()}`;
-  }
-
-  return `${datePart} ${timeStr}`;  // e.g. "Pe 27.02 16:00" or "Pe 27.02.2026 16:00"
-  };
-
 
   // Load messages
   useEffect(() => {
@@ -256,20 +212,15 @@ function PrivateChat() {
   };
 
   const generateAndSetRandomKey = async () => {
-    try {
-      const base64Key = await generateKey();
-      const imported = await importKey(base64Key);
-      if (imported) {
-        setCryptoKey(imported);
-        setKeyStatus('shared');
-        setSharedKeyInput(base64Key);
-        localStorage.setItem(`key_${chatId}`, base64Key);
-        await navigator.clipboard.writeText(base64Key);
-        alert('New secure random key generated and copied!\nShare this securely with your friend.');
-      }
-    } catch (err) {
-      console.error('Random key generation failed:', err);
-      alert('Error generating key.');
+    const base64Key = await generateKey();
+    const imported = await importKey(base64Key);
+    if (imported) {
+      setCryptoKey(imported);
+      setKeyStatus('shared');
+      setSharedKeyInput(base64Key);
+      localStorage.setItem(`key_${chatId}`, base64Key);
+      await navigator.clipboard.writeText(base64Key);
+      alert('New secure random key generated and copied to clipboard!\nShare this securely with your friend.');
     }
   };
 
@@ -279,73 +230,37 @@ function PrivateChat() {
       return;
     }
 
-    try {
-      const encoder = new TextEncoder();
-      const salt = encoder.encode('i-msgnet-passphrase-salt-2026');
-      const material = await crypto.subtle.importKey(
-        'raw',
-        encoder.encode(pass),
-        { name: 'PBKDF2' },
-        false,
-        ['deriveBits', 'deriveKey']
-      );
+    const encoder = new TextEncoder();
+    const salt = encoder.encode('i-msgnet-passphrase-salt-2026');
+    const material = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(pass),
+      { name: 'PBKDF2' },
+      false,
+      ['deriveBits', 'deriveKey']
+    );
 
-      const derivedKey = await crypto.subtle.deriveKey(
-        {
-          name: 'PBKDF2',
-          salt,
-          iterations: 150000,
-          hash: 'SHA-256'
-        },
-        material,
-        { name: 'AES-GCM', length: 256 },
-        true,
-        ['encrypt', 'decrypt']
-      );
+    const derivedKey = await crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' },
+      material,
+      { name: 'AES-GCM', length: 256 },
+      true,
+      ['encrypt', 'decrypt']
+    );
 
-      const exported = await crypto.subtle.exportKey('raw', derivedKey);
-      const base64Key = btoa(String.fromCharCode(...new Uint8Array(exported)));
+    const exported = await crypto.subtle.exportKey('raw', derivedKey);
+    const base64Key = btoa(String.fromCharCode(...new Uint8Array(exported)));
 
-      setCryptoKey(derivedKey);
-      setKeyStatus('shared');
-      setSharedKeyInput(base64Key);
-      localStorage.setItem(`key_${chatId}`, base64Key);
+    setCryptoKey(derivedKey);
+    setKeyStatus('shared');
+    setSharedKeyInput(base64Key);
+    localStorage.setItem(`key_${chatId}`, base64Key);
 
-      setPassphraseError('');
-      setShowPassphraseInput(false);
-      setPassphrase('');
-      setShowPassphrase(false);
-
-      alert('Passphrase accepted! Key derived and set.\nYour friend must enter the exact same passphrase.');
-    } catch (err) {
-      console.error('Passphrase derivation failed:', err);
-      setPassphraseError('Failed to derive key – try again');
-    }
+    setPassphraseError('');
+    setShowPassphraseInput(false);
+    setPassphrase('');
+    alert('Passphrase accepted! Key derived and set. Your friend must enter the exact same passphrase.');
   };
-
-
-      // Strength helpers
-    const getStrengthColor = (pass) => {
-      if (pass.length < 12) return '#dc3545';     // red
-      if (pass.length < 16) return '#fd7e14';     // orange
-      if (pass.length < 20) return '#ffc107';     // yellow
-      return '#28a745';                           // green
-    };
-
-
-    const getStrengthWidth = (pass) => {
-      const len = Math.min(pass.length, 30); // cap visual at 30 chars
-      return `${(len / 30) * 100}%`;
-    };
-
-    const getStrengthLabel = (pass) => {
-      if (pass.length < 12) return `Too short (${pass.length}/12)`;
-      if (pass.length < 16) return 'Medium';
-      if (pass.length < 20) return 'Strong';
-      return 'Very strong ✓';
-    };
-
-
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !cryptoKey) return;
@@ -409,6 +324,40 @@ function PrivateChat() {
     setShowNamePrompt(false);
     setChatNameInput('');
     window.dispatchEvent(new Event('chatsUpdated'));
+  };
+
+  const formatMessageTime = (timestamp) => {
+    if (!timestamp) return '';
+
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+
+    const timeStr = date.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    if (isToday) {
+      return timeStr;  // "16:00"
+    }
+
+    // European DD.MM with short weekday
+    let datePart = date.toLocaleDateString('fi-FI', {
+      weekday: 'short',
+      day: '2-digit',
+      month: '2-digit'
+    });
+
+    // Add year if older than 7 days
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays > 7) {
+      datePart += `.${date.getFullYear()}`;
+    }
+
+    return `${datePart} ${timeStr}`;
   };
 
   return (
@@ -506,20 +455,12 @@ function PrivateChat() {
             <p style={{ margin: '0 0 8px 0', fontWeight: 'bold' }}>
               Want to start a secure chat with someone?
             </p>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <button
-                onClick={generateAndSetRandomKey}
-                style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '6px' }}
-              >
-                Generate real random key
-              </button>
-              <button
-                onClick={() => setShowPassphraseInput(true)}
-                style={{ padding: '10px 20px', background: '#007bff', color: 'white', border: 'none', borderRadius: '6px' }}
-              >
-                Use shared passphrase
-              </button>
-            </div>
+            <button
+              onClick={generateAndSetRandomKey}
+              style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '6px' }}
+            >
+              Generate real random key
+            </button>
           </div>
         )}
 
@@ -529,7 +470,7 @@ function PrivateChat() {
           </small>
         )}
 
-        <button onClick={clearKey} style={{ marginTop: '8px', padding: '8px 16px', background: '#dc3545', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
+        <button onClick={clearKey} style={{ marginLeft: '8px', padding: '8px 16px', background: '#dc3545', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
           Clear key / Back to demo
         </button>
 
@@ -547,134 +488,6 @@ function PrivateChat() {
             Both must paste the same key here for secure E2EE. Never send the key in this chat!
           </small>
         </div>
-
-
-{showPassphraseInput && (
-  <div style={{
-    marginTop: '16px',
-    padding: '16px',
-    background: '#e7f3ff',
-    borderRadius: '8px',
-    border: '1px solid #b3d4fc'
-  }}>
-    <strong>Enter shared passphrase</strong><br />
-    <small style={{ color: '#555', lineHeight: '1.5' }}>
-      Both you and your friend must type the <strong>exact same passphrase</strong> (minimum 12 characters).<br />
-      Agree on it outside this chat (phone, in person, secure message — never type it here!).
-    </small>
-
-    <div style={{ position: 'relative', margin: '16px 0' }}>
-      <input
-        type={showPassphrase ? 'text' : 'password'}
-        value={passphrase}
-        onChange={(e) => {
-          setPassphrase(e.target.value);
-          setPassphraseError('');
-        }}
-        placeholder="Your shared passphrase (min 12 chars)"
-        style={{
-          width: '100%',
-          padding: '10px 40px 10px 12px',
-          border: '1px solid #ccc',
-          borderRadius: '6px',
-          fontFamily: 'monospace',
-          boxSizing: 'border-box'
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            deriveKeyFromPassphrase(passphrase);
-          }
-        }}
-      />
-
-      <button
-        type="button"
-        onClick={() => setShowPassphrase(!showPassphrase)}
-        style={{
-          position: 'absolute',
-          right: '10px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          background: 'none',
-          border: 'none',
-          fontSize: '1.2em',
-          cursor: 'pointer',
-          color: '#555'
-        }}
-        title={showPassphrase ? 'Hide passphrase' : 'Show passphrase'}
-      >
-        {showPassphrase ? '🙈' : '👁️'}
-      </button>
-    </div>
-
-    {/* Strength meter + label */}
-    <div style={{ marginBottom: '12px' }}>
-      {passphrase.length > 0 && (
-        <>
-          <div style={{
-            height: '8px',
-            background: getStrengthColor(passphrase),
-            borderRadius: '4px',
-            width: getStrengthWidth(passphrase),
-            transition: 'width 0.3s, background 0.3s',
-            marginBottom: '6px'
-          }} />
-          <small style={{ 
-            fontWeight: 'bold',
-            color: getStrengthColor(passphrase)
-          }}>
-            {getStrengthLabel(passphrase)}
-          </small>
-        </>
-      )}
-    </div>
-
-    {passphraseError && (
-      <div style={{ color: '#dc3545', marginBottom: '12px' }}>
-        {passphraseError}
-      </div>
-    )}
-
-    <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-      <button
-        onClick={() => {
-          setShowPassphraseInput(false);
-          setPassphrase('');
-          setPassphraseError('');
-          setShowPassphrase(false);
-        }}
-        style={{
-          padding: '10px 20px',
-          background: '#6c757d',
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer'
-        }}
-      >
-        Cancel
-      </button>
-      <button
-        onClick={() => deriveKeyFromPassphrase(passphrase)}
-        disabled={passphrase.length < 12}
-        style={{
-          padding: '10px 20px',
-          background: passphrase.length >= 12 ? '#007bff' : '#ccc',
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: passphrase.length >= 12 ? 'pointer' : 'not-allowed',
-          fontWeight: 'bold'
-        }}
-      >
-        Use this passphrase
-      </button>
-    </div>
-  </div>
-)}
-
-
 
         <button onClick={simulateIncoming} disabled={!cryptoKey} style={{ marginTop: '12px', padding: '8px 16px', background: '#28a745', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
           Simulate incoming message (test decrypt)
@@ -697,18 +510,14 @@ function PrivateChat() {
             }}
           >
             {msg.text}
-
-
-          <div style={{
-            fontSize: '0.75em',
-            opacity: 0.7,
-            marginTop: '4px',
-            textAlign: msg.sender === 'me' ? 'right' : 'left'
-          }}>
-            {formatMessageTime(msg.serverTimestamp || msg.timestamp || Date.now())}
-          </div>
-
-
+            <div style={{
+              fontSize: '0.75em',
+              opacity: 0.7,
+              marginTop: '4px',
+              textAlign: msg.sender === 'me' ? 'right' : 'left'
+            }}>
+              {formatMessageTime(msg.timestamp || Date.now())}
+            </div>
           </div>
         ))}
         <div ref={messagesEndRef} />
