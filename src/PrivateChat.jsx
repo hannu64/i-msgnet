@@ -703,7 +703,7 @@ function PrivateChat() {
           onClick={sendMessage}
           style={{ marginLeft: '10px', padding: '12px 24px', background: '#25D366', color: 'white', border: 'none', borderRadius: '20px', cursor: 'pointer' }}
         >
-          Send
+          Send It
         </button>
       </div>
     </div>
