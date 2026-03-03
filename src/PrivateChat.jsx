@@ -52,6 +52,7 @@ function PrivateChat() {
   const [passphraseError, setPassphraseError] = useState('');
   const [showPassphrase, setShowPassphrase] = useState(false); // visibility toggle
   const messagesEndRef = useRef(null);
+  const [lifespanHours, setLifespanHours] = useState('24'); // default 24h
 
   // Improved timestamp formatting (used in bubbles)
   const formatMessageTime = (timestamp) => {
@@ -330,31 +331,33 @@ function PrivateChat() {
     return 'Very strong ✓';
   };
 
+
   const sendMessage = async () => {
-    if (!newMessage.trim() || !cryptoKey) return;
-    const encoder = new TextEncoder();
-    const data = encoder.encode(newMessage);
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, data);
-    const combined = new Uint8Array(iv.length + encrypted.byteLength);
-    combined.set(iv);
-    combined.set(new Uint8Array(encrypted), iv.length);
-    const base64 = btoa(String.fromCharCode(...combined));
-    const msg = { encrypted: base64, sender: 'me', timestamp: Date.now() };
-    const updated = [...messages, msg];
-    setMessages(updated);
-    localStorage.setItem(`messages_${chatId}`, JSON.stringify(updated));
-    setNewMessage('');
-    try {
-      await fetch('https://i-msgnet-backend-production.up.railway.app/api/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatId, encrypted: base64 })
-      });
-    } catch (err) {
-      console.error('Backend send failed:', err);
-    }
+  if (!newMessage.trim() || !cryptoKey) return;
+  // ... encryption code ...
+  const msg = { 
+    encrypted: base64, 
+    sender: 'me', 
+    timestamp: Date.now(),
+    lifespanHours: lifespanHours === 'null' ? null : parseInt(lifespanHours)
   };
+  // ... update local messages ...
+  try {
+    await fetch('https://i-msgnet-backend-production.up.railway.app/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        chatId, 
+        encrypted: base64,
+        lifespanHours: msg.lifespanHours  // new field
+      })
+    });
+  } catch (err) {
+    console.error('Backend send failed:', err);
+  }
+  };
+
+
 
   const simulateIncoming = async () => {
     if (!cryptoKey) {
@@ -691,6 +694,38 @@ function PrivateChat() {
       </div>
 
       <div style={{ display: 'flex', paddingTop: '10px', borderTop: '1px solid #eee' }}>
+
+        <div style={{ marginBottom: '12px', display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <label style={{ fontWeight: 'bold' }}>Delete after:</label>
+          <label>
+            <input
+              type="radio"
+              name="lifespan"
+              value="24"
+              checked={lifespanHours === '24'}
+              onChange={() => setLifespanHours('24')}
+            /> 24 hours
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="lifespan"
+              value="192"
+              checked={lifespanHours === '192'}
+              onChange={() => setLifespanHours('192')}
+            /> 8 days
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="lifespan"
+              value="null"
+              checked={lifespanHours === 'null'}
+              onChange={() => setLifespanHours('null')}
+            /> No limit
+          </label>
+        </div>
+
         <input
           type="text"
           value={newMessage}
