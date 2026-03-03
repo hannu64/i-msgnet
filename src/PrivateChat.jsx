@@ -332,16 +332,32 @@ function PrivateChat() {
   };
 
 
-  const sendMessage = async () => {
+const sendMessage = async () => {
   if (!newMessage.trim() || !cryptoKey) return;
-  // ... encryption code ...
+
+  const encoder = new TextEncoder();
+  const data = encoder.encode(newMessage);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, data);
+
+  const combined = new Uint8Array(iv.length + encrypted.byteLength);
+  combined.set(iv);
+  combined.set(new Uint8Array(encrypted), iv.length);
+  const base64 = btoa(String.fromCharCode(...combined));
+
+  // Now base64 is defined → safe to use
   const msg = { 
     encrypted: base64, 
     sender: 'me', 
     timestamp: Date.now(),
     lifespanHours: lifespanHours === 'null' ? null : parseInt(lifespanHours)
   };
-  // ... update local messages ...
+
+  const updated = [...messages, msg];
+  setMessages(updated);
+  localStorage.setItem(`messages_${chatId}`, JSON.stringify(updated));
+  setNewMessage('');
+
   try {
     await fetch('https://i-msgnet-backend-production.up.railway.app/api/messages', {
       method: 'POST',
@@ -349,13 +365,13 @@ function PrivateChat() {
       body: JSON.stringify({ 
         chatId, 
         encrypted: base64,
-        lifespanHours: msg.lifespanHours  // new field
+        lifespanHours: msg.lifespanHours  // sent to backend
       })
     });
   } catch (err) {
     console.error('Backend send failed:', err);
   }
-  };
+};
 
 
 
