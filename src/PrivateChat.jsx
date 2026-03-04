@@ -713,19 +713,20 @@ const sendMessage = async () => {
 
         <div
           key={idx}
-          className="message-bubble"  // ← ADD THIS
+          className="message-bubble"
           style={{
             alignSelf: msg.sender === 'me' ? 'flex-end' : 'flex-start',
             maxWidth: '70%',
-            margin: '8px 0',
-            padding: '10px 14px',
+            margin: '12px 0',           // ↑ more vertical space
+            padding: '12px 16px',       // ↑ more inner padding
             borderRadius: '18px',
             background: msg.sender === 'me' ? '#dcf8c6' : '#e3f2fd',
             boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
             wordBreak: 'break-word',
-            position: 'relative'  // already there, good
+            position: 'relative'
           }}
         >
+
           {msg.text}
           <div style={{
             fontSize: '0.75em',
@@ -738,24 +739,28 @@ const sendMessage = async () => {
 
           <button
             onClick={() => handleDeleteMessage(msg.encrypted)}
-            className="delete-btn"  // ← ADD THIS
+            className="delete-btn"
             style={{
               position: 'absolute',
-              top: '4px',
-              right: msg.sender === 'me' ? '4px' : 'auto',
-              left: msg.sender === 'them' ? '4px' : 'auto',
+              top: '-10px',               // ↑ move above bubble
+              right: msg.sender === 'me' ? '-10px' : 'auto',   // right for own messages
+              left: msg.sender === 'them' ? '-10px' : 'auto',  // left for incoming
               background: 'none',
               border: 'none',
               color: '#dc3545',
-              fontSize: '1.1em',
+              fontSize: '1.2em',
               cursor: 'pointer',
-              padding: '4px'
-              // Remove opacity: 0 from here — CSS handles it
+              padding: '4px',
+              zIndex: 10,                 // ensure above other elements
+              opacity: 0,                 // CSS hover will override
+              transition: 'opacity 0.2s'
             }}
             title="Delete message"
           >
             🗑
           </button>
+
+
         </div>
 
 
