@@ -752,7 +752,7 @@ const sendMessage = async () => {
               cursor: 'pointer',
               padding: '4px',
               zIndex: 10,                 // ensure above other elements
-              opacity: 1,                 // CSS hover will override
+              opacity: 0,                 // CSS hover will override
               transition: 'opacity 0.2s'
             }}
             title="Delete message"
