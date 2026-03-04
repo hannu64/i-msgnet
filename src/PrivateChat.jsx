@@ -716,6 +716,9 @@ const sendMessage = async () => {
         flexDirection: 'column',
         position: 'relative'         // helps with absolute positioning
       }}>
+
+      <div style={{ position: 'relative', overflow: 'visible', width: '100%' }}>
+
         {decryptedMessages.map((msg, idx) => (
           <div
             key={idx}
@@ -773,6 +776,9 @@ const sendMessage = async () => {
             </button>
           </div>
         ))}
+
+      </div>
+
         <div ref={messagesEndRef} />
       </div>
 
