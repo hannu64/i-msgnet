@@ -711,21 +711,22 @@ const sendMessage = async () => {
 
 
 
-        <div
-          key={idx}
-          className="message-bubble"
-          style={{
-            alignSelf: msg.sender === 'me' ? 'flex-end' : 'flex-start',
-            maxWidth: '70%',
-            margin: '12px 0',           // ↑ more vertical space
-            padding: '12px 16px',       // ↑ more inner padding
-            borderRadius: '18px',
-            background: msg.sender === 'me' ? '#dcf8c6' : '#e3f2fd',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-            wordBreak: 'break-word',
-            position: 'relative'
-          }}
-        >
+          <div
+            key={idx}
+            className="message-bubble"
+            style={{
+              alignSelf: msg.sender === 'me' ? 'flex-end' : 'flex-start',
+              maxWidth: '70%',
+              margin: '16px 0',           // ↑ more vertical space (was 12px)
+              padding: '12px 20px',       // ↑ more horizontal space (was 14px)
+              borderRadius: '18px',
+              background: msg.sender === 'me' ? '#dcf8c6' : '#e3f2fd',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+              wordBreak: 'break-word',
+              position: 'relative',
+              overflow: 'visible'         // ← ADD THIS — prevents clipping
+            }}
+          >
 
           {msg.text}
           <div style={{
@@ -737,29 +738,29 @@ const sendMessage = async () => {
             {formatMessageTime(msg.serverTimestamp || msg.timestamp || Date.now())}
           </div>
 
+
           <button
             onClick={() => handleDeleteMessage(msg.encrypted)}
             className="delete-btn"
             style={{
               position: 'absolute',
-              top: '-10px',               // ↑ move above bubble
-              right: msg.sender === 'me' ? '-10px' : 'auto',   // right for own messages
-              left: msg.sender === 'them' ? '-10px' : 'auto',  // left for incoming
+              top: '-14px',               // ↑ higher up (was -10px)
+              right: msg.sender === 'me' ? '-14px' : 'auto',   // further right
+              left: msg.sender === 'them' ? '-14px' : 'auto',  // further left
               background: 'none',
               border: 'none',
               color: '#dc3545',
-              fontSize: '1.2em',
+              fontSize: '1.3em',          // slightly bigger for visibility
               cursor: 'pointer',
               padding: '4px',
               zIndex: 10,                 // ensure above other elements
-              opacity: 0,                 // CSS hover will override
+              opacity: 0,
               transition: 'opacity 0.2s'
             }}
             title="Delete message"
           >
             🗑
           </button>
-
 
         </div>
 
