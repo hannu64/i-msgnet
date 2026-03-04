@@ -2,15 +2,16 @@
 
 /* body { background: lightblue !important; } */   /* temporary test */
 
+
 .message-bubble {
   position: relative;
+  overflow: visible !important; /* reinforce */
 }
 
 .delete-btn {
   opacity: 0;
   transition: opacity 0.2s;
 }
-
 
 .message-bubble:hover .delete-btn {
   opacity: 1 !important;
