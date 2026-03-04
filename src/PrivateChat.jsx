@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import './styles.css';
 
 // Generate random AES-256 key and export as base64
 const generateKey = async () => {
@@ -707,57 +708,57 @@ const sendMessage = async () => {
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px 0', display: 'flex', flexDirection: 'column' }}>
         {decryptedMessages.map((msg, idx) => (
-          <div
-            key={idx}
-            style={{
-              alignSelf: msg.sender === 'me' ? 'flex-end' : 'flex-start',
-              maxWidth: '70%',
-              margin: '8px 0',
-              padding: '10px 14px',
-              borderRadius: '18px',
-              background: msg.sender === 'me' ? '#dcf8c6' : '#e3f2fd',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-              wordBreak: 'break-word'
-            }}
-          >
-            {msg.text}
-            <div style={{
-              fontSize: '0.75em',
-              opacity: 0.7,
-              marginTop: '4px',
-              textAlign: msg.sender === 'me' ? 'right' : 'left'
-            }}>
-              {formatMessageTime(msg.serverTimestamp || msg.timestamp || Date.now())}
-            </div>
-
-          {/* Trash icon - show on hover */}
-            <button
-              onClick={() => handleDeleteMessage(msg.encrypted)}
-              style={{
-                position: 'absolute',
-                top: '4px',
-                right: msg.sender === 'me' ? '4px' : 'auto',
-                left: msg.sender === 'them' ? '4px' : 'auto',
-                background: 'none',
-                border: 'none',
-                color: '#dc3545',
-                fontSize: '1.1em',
-                cursor: 'pointer',
-                opacity: 0,
-                transition: 'opacity 0.2s',
-                padding: '4px'
-              }}
-              className="delete-btn" // optional for CSS hover
-              title="Delete message"
-            >
-              🗑
-            </button>
 
 
 
-
-
+        <div
+          key={idx}
+          className="message-bubble"  // ← ADD THIS
+          style={{
+            alignSelf: msg.sender === 'me' ? 'flex-end' : 'flex-start',
+            maxWidth: '70%',
+            margin: '8px 0',
+            padding: '10px 14px',
+            borderRadius: '18px',
+            background: msg.sender === 'me' ? '#dcf8c6' : '#e3f2fd',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+            wordBreak: 'break-word',
+            position: 'relative'  // already there, good
+          }}
+        >
+          {msg.text}
+          <div style={{
+            fontSize: '0.75em',
+            opacity: 0.7,
+            marginTop: '4px',
+            textAlign: msg.sender === 'me' ? 'right' : 'left'
+          }}>
+            {formatMessageTime(msg.serverTimestamp || msg.timestamp || Date.now())}
           </div>
+
+          <button
+            onClick={() => handleDeleteMessage(msg.encrypted)}
+            className="delete-btn"  // ← ADD THIS
+            style={{
+              position: 'absolute',
+              top: '4px',
+              right: msg.sender === 'me' ? '4px' : 'auto',
+              left: msg.sender === 'them' ? '4px' : 'auto',
+              background: 'none',
+              border: 'none',
+              color: '#dc3545',
+              fontSize: '1.1em',
+              cursor: 'pointer',
+              padding: '4px'
+              // Remove opacity: 0 from here — CSS handles it
+            }}
+            title="Delete message"
+          >
+            🗑
+          </button>
+        </div>
+
+
         ))}
         <div ref={messagesEndRef} />
       </div>
