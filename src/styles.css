@@ -5,18 +5,18 @@
 
 .message-bubble {
   position: relative;
-  overflow: visible !important; /* force no clip */
+  overflow: visible !important;
 }
 
 .delete-btn {
   opacity: 0;
   transition: opacity 0.2s;
+  pointer-events: auto; /* ensure clickable even if partially clipped */
 }
 
 .message-bubble:hover .delete-btn {
   opacity: 1 !important;
 }
-
 
 /* Show on hover of any parent or self */
 /*
