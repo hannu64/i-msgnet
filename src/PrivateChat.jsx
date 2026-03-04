@@ -54,6 +54,31 @@ function PrivateChat() {
   const messagesEndRef = useRef(null);
   const [lifespanHours, setLifespanHours] = useState('24'); // default 24h
 
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null); // encrypted string of message to delete
+
+  const handleDeleteMessage = async (encrypted) => {
+  if (!window.confirm('Delete this message for everyone? This cannot be undone.')) return;
+
+  try {
+    const res = await fetch(`https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}/${encodeURIComponent(encrypted)}`, {
+      method: 'DELETE',
+    });
+    if (res.ok) {
+      // Remove from local state immediately
+      setMessages(prev => prev.filter(m => m.encrypted !== encrypted));
+      localStorage.setItem(`messages_${chatId}`, JSON.stringify(
+        JSON.parse(localStorage.getItem(`messages_${chatId}`) || '[]').filter(m => m.encrypted !== encrypted)
+      ));
+      setDeleteConfirmId(null);
+    } else {
+      alert('Failed to delete message');
+    }
+  } catch (err) {
+    console.error('Delete failed:', err);
+    alert('Error deleting message');
+  }
+};
+
   // Improved timestamp formatting (used in bubbles)
   const formatMessageTime = (timestamp) => {
     if (!timestamp) return '';
@@ -704,10 +729,40 @@ const sendMessage = async () => {
             }}>
               {formatMessageTime(msg.serverTimestamp || msg.timestamp || Date.now())}
             </div>
+
+          {/* Trash icon - show on hover */}
+            <button
+              onClick={() => handleDeleteMessage(msg.encrypted)}
+              style={{
+                position: 'absolute',
+                top: '4px',
+                right: msg.sender === 'me' ? '4px' : 'auto',
+                left: msg.sender === 'them' ? '4px' : 'auto',
+                background: 'none',
+                border: 'none',
+                color: '#dc3545',
+                fontSize: '1.1em',
+                cursor: 'pointer',
+                opacity: 0,
+                transition: 'opacity 0.2s',
+                padding: '4px'
+              }}
+              className="delete-btn" // optional for CSS hover
+              title="Delete message"
+            >
+              🗑
+            </button>
+
+
+
+
+
           </div>
         ))}
         <div ref={messagesEndRef} />
       </div>
+
+
 
       <div style={{ display: 'flex', paddingTop: '10px', borderTop: '1px solid #eee' }}>
 
