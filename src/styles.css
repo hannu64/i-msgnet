@@ -5,7 +5,7 @@
 
 .message-bubble {
   position: relative;
-  overflow: visible !important; /* reinforce */
+  overflow: visible !important; /* force no clip */
 }
 
 .delete-btn {
