@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import './styles.css';
+// import './styles.css';
 
 // Generate random AES-256 key and export as base64
 const generateKey = async () => {
@@ -769,7 +769,7 @@ const sendMessage = async () => {
               position: 'absolute',
               top: '-18px',
               right: msg.sender === 'me' ? '-18px' : 'auto',
-              left: msg.sender === 'them' ? '-24px' : 'auto',   // ← further left for incoming
+              left: msg.sender === 'them' ? '-30px' : 'auto',   // ← further left for incoming
               background: 'rgba(255,255,255,0.9)',
               border: '1px solid #dc3545',
               borderRadius: '50%',
