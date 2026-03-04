@@ -706,73 +706,72 @@ const sendMessage = async () => {
         </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 0', display: 'flex', flexDirection: 'column' }}>
+
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        overflowX: 'visible',        // ← allow horizontal overflow
+        padding: '10px 0',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative'         // helps with absolute positioning
+      }}>
         {decryptedMessages.map((msg, idx) => (
-
-
-
           <div
             key={idx}
             className="message-bubble"
             style={{
               alignSelf: msg.sender === 'me' ? 'flex-end' : 'flex-start',
               maxWidth: '70%',
-              margin: '16px 0',           // ↑ more vertical space (was 12px)
-              padding: '12px 20px',       // ↑ more horizontal space (was 14px)
+              margin: '16px 0',
+              padding: '12px 20px',
               borderRadius: '18px',
               background: msg.sender === 'me' ? '#dcf8c6' : '#e3f2fd',
               boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
               wordBreak: 'break-word',
               position: 'relative',
-              overflow: 'visible'         // ← ADD THIS — prevents clipping
+              overflow: 'visible'      // already there — good
             }}
           >
+            {msg.text}
+            <div style={{
+              fontSize: '0.75em',
+              opacity: 0.7,
+              marginTop: '4px',
+              textAlign: msg.sender === 'me' ? 'right' : 'left'
+            }}>
+              {formatMessageTime(msg.serverTimestamp || msg.timestamp || Date.now())}
+            </div>
 
-          {msg.text}
-          <div style={{
-            fontSize: '0.75em',
-            opacity: 0.7,
-            marginTop: '4px',
-            textAlign: msg.sender === 'me' ? 'right' : 'left'
-          }}>
-            {formatMessageTime(msg.serverTimestamp || msg.timestamp || Date.now())}
+            <button
+              onClick={() => handleDeleteMessage(msg.encrypted)}
+              className="delete-btn"
+              style={{
+                position: 'absolute',
+                top: '-18px',
+                right: msg.sender === 'me' ? '-18px' : 'auto',
+                left: msg.sender === 'them' ? '-18px' : 'auto',
+                background: 'rgba(255,255,255,0.9)',
+                border: '1px solid #dc3545',
+                borderRadius: '50%',
+                color: '#dc3545',
+                fontSize: '1.2em',
+                cursor: 'pointer',
+                padding: '4px',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 10,
+                opacity: 0,
+                transition: 'opacity 0.2s'
+              }}
+              title="Delete message"
+            >
+              🗑
+            </button>
           </div>
-
-
-          <button
-            onClick={() => handleDeleteMessage(msg.encrypted)}
-            className="delete-btn"
-
-            style={{
-              position: 'absolute',
-              top: '-18px',               // ↑ further up
-              right: msg.sender === 'me' ? '-18px' : 'auto',   // further right
-              left: msg.sender === 'them' ? '-18px' : 'auto',  // further left
-              background: 'rgba(255,255,255,0.9)',  // ← optional: white bg for contrast
-              border: '1px solid #dc3545',
-              borderRadius: '50%',
-              color: '#dc3545',
-              fontSize: '1.2em',
-              cursor: 'pointer',
-              padding: '4px',
-              width: '28px',
-              height: '28px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10,
-              opacity: 0,
-              transition: 'opacity 0.2s'
-            }}            
-
-            title="Delete message"
-          >
-            🗑
-          </button>
-
-        </div>
-
-
         ))}
         <div ref={messagesEndRef} />
       </div>
