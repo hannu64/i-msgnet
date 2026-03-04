@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
 import PrivateChat from './PrivateChat.jsx';
+import './styles.css';   // or '../styles.css' depending on folder
 
 function App() {
   return (
