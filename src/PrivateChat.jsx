@@ -742,21 +742,29 @@ const sendMessage = async () => {
           <button
             onClick={() => handleDeleteMessage(msg.encrypted)}
             className="delete-btn"
+
             style={{
               position: 'absolute',
-              top: '-14px',               // ↑ higher up (was -10px)
-              right: msg.sender === 'me' ? '-14px' : 'auto',   // further right
-              left: msg.sender === 'them' ? '-14px' : 'auto',  // further left
-              background: 'none',
-              border: 'none',
+              top: '-18px',               // ↑ further up
+              right: msg.sender === 'me' ? '-18px' : 'auto',   // further right
+              left: msg.sender === 'them' ? '-18px' : 'auto',  // further left
+              background: 'rgba(255,255,255,0.9)',  // ← optional: white bg for contrast
+              border: '1px solid #dc3545',
+              borderRadius: '50%',
               color: '#dc3545',
-              fontSize: '1.3em',          // slightly bigger for visibility
+              fontSize: '1.2em',
               cursor: 'pointer',
               padding: '4px',
-              zIndex: 10,                 // ensure above other elements
+              width: '28px',
+              height: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10,
               opacity: 0,
               transition: 'opacity 0.2s'
-            }}
+            }}            
+
             title="Delete message"
           >
             🗑
