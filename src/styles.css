@@ -1,4 +1,7 @@
 /* src/styles.css */
+
+body { background: lightblue !important; }  /* temporary test */
+
 .message-bubble {
   position: relative;
 }
@@ -13,3 +16,5 @@ div:hover .delete-btn,
 .delete-btn:hover {
   opacity: 1 !important;
 }
+
+
