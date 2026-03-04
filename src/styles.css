@@ -7,7 +7,9 @@
   opacity: 0;
   transition: opacity 0.2s;
 }
- 
-.message-bubble:hover .delete-btn {
-  opacity: 1;
+
+/* Show on hover of any parent or self */
+div:hover .delete-btn,
+.delete-btn:hover {
+  opacity: 1 !important;
 }
