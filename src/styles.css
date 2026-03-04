@@ -6,12 +6,13 @@
 .message-bubble {
   position: relative;
   overflow: visible !important;
+  box-sizing: border-box;
 }
 
 .delete-btn {
   opacity: 0;
   transition: opacity 0.2s;
-  pointer-events: auto; /* ensure clickable even if partially clipped */
+  pointer-events: auto;
 }
 
 .message-bubble:hover .delete-btn {
