@@ -1,0 +1,13 @@
+/* src/styles.css */
+.message-bubble {
+  position: relative;
+}
+
+.delete-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.message-bubble:hover .delete-btn {
+  opacity: 1;
+}
