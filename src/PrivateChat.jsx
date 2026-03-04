@@ -717,15 +717,27 @@ const sendMessage = async () => {
         position: 'relative'         // helps with absolute positioning
       }}>
 
-      <div style={{ position: 'relative', overflow: 'visible', width: '100%' }}>
+      
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '10px 20px',           // ← add horizontal padding
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%',                  // ← force full width
+          boxSizing: 'border-box'         // ← respect padding
+        }}>
+
 
         {decryptedMessages.map((msg, idx) => (
+          
+                
           <div
             key={idx}
             className="message-bubble"
             style={{
               alignSelf: msg.sender === 'me' ? 'flex-end' : 'flex-start',
-              maxWidth: '70%',
+              maxWidth: '70%',              // ← this now works with parent width
               margin: '16px 0',
               padding: '12px 20px',
               borderRadius: '18px',
@@ -733,9 +745,11 @@ const sendMessage = async () => {
               boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
               wordBreak: 'break-word',
               position: 'relative',
-              overflow: 'visible'      // already there — good
+              overflow: 'visible',
+              width: 'fit-content'          // ← helps with maxWidth
             }}
-          >
+          >          
+          
             {msg.text}
             <div style={{
               fontSize: '0.75em',
@@ -749,27 +763,32 @@ const sendMessage = async () => {
             <button
               onClick={() => handleDeleteMessage(msg.encrypted)}
               className="delete-btn"
-              style={{
-                position: 'absolute',
-                top: '-18px',
-                right: msg.sender === 'me' ? '-18px' : 'auto',
-                left: msg.sender === 'them' ? '-18px' : 'auto',
-                background: 'rgba(255,255,255,0.9)',
-                border: '1px solid #dc3545',
-                borderRadius: '50%',
-                color: '#dc3545',
-                fontSize: '1.2em',
-                cursor: 'pointer',
-                padding: '4px',
-                width: '28px',
-                height: '28px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 10,
-                opacity: 0,
-                transition: 'opacity 0.2s'
-              }}
+              
+
+            style={{
+              position: 'absolute',
+              top: '-18px',
+              right: msg.sender === 'me' ? '-18px' : 'auto',
+              left: msg.sender === 'them' ? '-24px' : 'auto',   // ← further left for incoming
+              background: 'rgba(255,255,255,0.9)',
+              border: '1px solid #dc3545',
+              borderRadius: '50%',
+              color: '#dc3545',
+              fontSize: '1.2em',
+              cursor: 'pointer',
+              padding: '4px',
+              width: '28px',
+              height: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10,
+              opacity: 0,
+              transition: 'opacity 0.2s',
+              pointerEvents: 'auto'
+            }}
+
+
               title="Delete message"
             >
               🗑
