@@ -53,11 +53,11 @@ function PrivateChat() {
   const [passphraseError, setPassphraseError] = useState('');
   const [showPassphrase, setShowPassphrase] = useState(false);
   const [lifespanHours, setLifespanHours] = useState('24');
-  const messagesEndRef = useRef(null);
+  const [hasNewMessages, setHasNewMessages] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
+  const messagesEndRef = useRef(null);
 
-
-  // Improved timestamp formatting
+  // Improved timestamp formatting (used in bubbles)
   const formatMessageTime = (timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -68,16 +68,22 @@ function PrivateChat() {
       minute: '2-digit',
       hour12: false
     });
-    if (isToday) return timeStr;
+    if (isToday) {
+      return timeStr; // "16:00"
+    }
+    // European DD.MM with short weekday
     let datePart = date.toLocaleDateString('fi-FI', {
       weekday: 'short',
       day: '2-digit',
       month: '2-digit'
     });
+    // Add year if older than 7 days
     const diffTime = Math.abs(now - date);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays > 7) datePart += `.${date.getFullYear()}`;
-    return `${datePart} ${timeStr}`;
+    if (diffDays > 7) {
+      datePart += `.${date.getFullYear()}`;
+    }
+    return `${datePart} ${timeStr}`; // e.g. "Pe 27.02 16:00" or "Pe 27.02.2026 16:00"
   };
 
   // Load messages
@@ -90,7 +96,9 @@ function PrivateChat() {
   useEffect(() => {
     const storedChats = JSON.parse(localStorage.getItem('chats')) || [];
     const existing = storedChats.find(c => c.id === chatId);
-    if (!existing) setShowNamePrompt(true);
+    if (!existing) {
+      setShowNamePrompt(true);
+    }
   }, [chatId]);
 
   // Load/use key
@@ -146,50 +154,43 @@ function PrivateChat() {
     decryptAll();
   }, [messages, cryptoKey]);
 
-
-  // Auto-scroll
-
+  // Auto-scroll only when at bottom or new messages
   useEffect(() => {
-  if (messagesEndRef.current) {
-    // Only scroll if at bottom already or new messages added
-    const isAtBottom = 
-      messagesEndRef.current.getBoundingClientRect().bottom <= 
-      (window.innerHeight || document.documentElement.clientHeight);
-
-    if (isAtBottom) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      const isAtBottom = 
+        messagesEndRef.current.getBoundingClientRect().bottom <= 
+        (window.innerHeight || document.documentElement.clientHeight) + 100; // buffer for safety
+      if (isAtBottom) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      } else if (messages.length > prevMessagesLengthRef.current) {
+        setHasNewMessages(true);
+      }
     }
-  }
-}, [decryptedMessages]);
+    prevMessagesLengthRef.current = messages.length;
+  }, [messages]);
 
-
-  // Polling (extracted as function)
-  const pollMessages = async () => {
-  try {
-    const res = await fetch(`https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`);
-    if (!res.ok) return;
-    const remoteMsgs = await res.json();
-
-    setMessages(prevMessages => {
-      const localMap = new Map(prevMessages.map(m => [m.encrypted, m]));
-      const remoteMap = new Map(remoteMsgs.map(m => [m.encrypted, m]));
-
-      // Keep only messages that still exist on backend
-      const updated = [...remoteMap.values()].map(rm => {
-        const local = localMap.get(rm.encrypted);
-        return local || { encrypted: rm.encrypted, sender: 'them', timestamp: rm.timestamp || Date.now() };
-      });
-
-      localStorage.setItem(`messages_${chatId}`, JSON.stringify(updated));
-      return updated;
-    });
-  } catch (err) {
-    console.error('Polling error:', err);
-  }
-};
-
-
+  // Polling
   useEffect(() => {
+    const pollMessages = async () => {
+      try {
+        const res = await fetch(`https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`);
+        if (!res.ok) return;
+        const remoteMsgs = await res.json();
+        setMessages(prevMessages => {
+          const localEncrypted = new Set(prevMessages.map(m => m.encrypted));
+          const incoming = remoteMsgs.filter(rm => !localEncrypted.has(rm.encrypted));
+          if (incoming.length > 0) {
+            const newOnes = incoming.map(rm => ({ encrypted: rm.encrypted, sender: 'them', timestamp: rm.timestamp || Date.now() }));
+            const updated = [...prevMessages, ...newOnes];
+            localStorage.setItem(`messages_${chatId}`, JSON.stringify(updated));
+            return updated;
+          }
+          return prevMessages;
+        });
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    };
     pollMessages();
     const interval = setInterval(pollMessages, 8000);
     return () => clearInterval(interval);
@@ -442,27 +443,6 @@ function PrivateChat() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '20px', boxSizing: 'border-box' }}>
       <h2>Chat {chatId.slice(0, 8)}...</h2>
-
-      <button
-        onClick={async () => {
-          setIsReloading(true);
-          localStorage.removeItem(`messages_${chatId}`);
-          await pollMessages();
-          setIsReloading(false);
-        }}
-        disabled={isReloading}
-        style={{
-          marginLeft: '16px',
-          padding: '6px 12px',
-          background: '#007bff',
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer'
-        }}
-      >
-        {isReloading ? 'Reloading...' : 'Reload messages'}
-      </button>
 
       {showNamePrompt && (
         <div style={{
@@ -726,21 +706,7 @@ function PrivateChat() {
         </button>
       </div>
 
-
-{/* padding: '20px 40px', dustbins location */}
-{/* <div style={{ flex: 1, overflowY: 'auto', overflowX: 'visible', padding: '10px 0', display: 'flex', flexDirection: 'column', position: 'relative' }}> */}
-
-<div style={{
-  flex: 1,
-  overflowY: 'auto',
-  overflowX: 'visible',
-  padding: '0px 20px',  // ← more side padding
-  display: 'flex',
-  flexDirection: 'column',
-  width: '100%',
-  boxSizing: 'border-box'
-}}>
-
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'visible', padding: '10px 0', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         {decryptedMessages.map((msg, idx) => (
           <div
             key={idx}
@@ -774,13 +740,8 @@ function PrivateChat() {
               style={{
                 position: 'absolute',
                 top: '-18px',
-
-/* dustbin locations */
-                right: msg.sender === 'me' ? '2px' : 'auto', 
-                left: msg.sender === 'them' ? '-0px' : 'auto', 
-/*                right: msg.sender === 'me' ? '-28px' : 'auto', */
-/*                left: msg.sender === 'them' ? '-28px' : 'auto',  */
-
+                right: msg.sender === 'me' ? '-18px' : 'auto',
+                left: msg.sender === 'them' ? '-18px' : 'auto',
                 background: 'rgba(255,255,255,0.9)',
                 border: '1px solid #dc3545',
                 borderRadius: '50%',
