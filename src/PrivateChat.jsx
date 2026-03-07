@@ -700,7 +700,7 @@ function PrivateChat() {
   flex: 1,
   overflowY: 'auto',
   overflowX: 'visible',
-  padding: '20px 40px',  // ← more side padding
+  padding: '10px 30px',  // ← more side padding
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
