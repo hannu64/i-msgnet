@@ -149,27 +149,32 @@ function PrivateChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [decryptedMessages]);
 
+
   // Polling (extracted as function)
   const pollMessages = async () => {
-    try {
-      const res = await fetch(`https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`);
-      if (!res.ok) return;
-      const remoteMsgs = await res.json();
-      setMessages(prevMessages => {
-        const localEncrypted = new Set(prevMessages.map(m => m.encrypted));
-        const incoming = remoteMsgs.filter(rm => !localEncrypted.has(rm.encrypted));
-        if (incoming.length > 0) {
-          const newOnes = incoming.map(rm => ({ encrypted: rm.encrypted, sender: 'them', timestamp: rm.timestamp || Date.now() }));
-          const updated = [...prevMessages, ...newOnes];
-          localStorage.setItem(`messages_${chatId}`, JSON.stringify(updated));
-          return updated;
-        }
-        return prevMessages;
+  try {
+    const res = await fetch(`https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`);
+    if (!res.ok) return;
+    const remoteMsgs = await res.json();
+
+    setMessages(prevMessages => {
+      const localMap = new Map(prevMessages.map(m => [m.encrypted, m]));
+      const remoteMap = new Map(remoteMsgs.map(m => [m.encrypted, m]));
+
+      // Keep only messages that still exist on backend
+      const updated = [...remoteMap.values()].map(rm => {
+        const local = localMap.get(rm.encrypted);
+        return local || { encrypted: rm.encrypted, sender: 'them', timestamp: rm.timestamp || Date.now() };
       });
-    } catch (err) {
-      console.error('Polling error:', err);
-    }
-  };
+
+      localStorage.setItem(`messages_${chatId}`, JSON.stringify(updated));
+      return updated;
+    });
+  } catch (err) {
+    console.error('Polling error:', err);
+  }
+};
+
 
   useEffect(() => {
     pollMessages();
