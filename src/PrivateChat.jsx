@@ -219,6 +219,22 @@ useEffect(() => {
     return () => clearInterval(interval);
   }, [chatId]);
 
+
+
+  useEffect(() => {
+    const handleChatSelected = (e) => {
+      if (e.detail.chatId === chatId && messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    };
+
+    window.addEventListener('chatSelected', handleChatSelected);
+    return () => window.removeEventListener('chatSelected', handleChatSelected);
+  }, [chatId, messages]); // re-attach on chatId change
+
+
+
+
   const copyKey = async () => {
     if (!cryptoKey) return;
     const raw = await crypto.subtle.exportKey('raw', cryptoKey);
@@ -468,29 +484,7 @@ useEffect(() => {
 
 
       <h2>Chat {chatId.slice(0, 8)}...</h2>
-      <button
-        onClick={async () => {
-          setIsReloading(true);
-          localStorage.removeItem(`messages_${chatId}`);
-          await pollMessages();
-          setIsReloading(false);
-        }}
-        disabled={isReloading}
-        style={{
-          marginLeft: '16px',
-          padding: '8px 16px',
-          background: isReloading ? '#6c757d' : '#007bff',
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: isReloading ? 'not-allowed' : 'pointer',
-          minWidth: '140px',           // ← ensures visible width
-          fontSize: '14px',
-          transition: 'background 0.2s'
-        }}
-      >
-        {isReloading ? 'Reloading...' : 'Reload messages'}
-      </button>
+
 
 
       {showNamePrompt && (
@@ -571,6 +565,33 @@ useEffect(() => {
              keyStatus === 'invalid' ? 'Invalid key' : 'Loading...'}
           </span>
         </div>
+
+
+        <button
+          onClick={async () => {
+            setIsReloading(true);
+            localStorage.removeItem(`messages_${chatId}`);
+            await pollMessages();
+            if (messagesEndRef.current) {
+              messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+            }
+            setIsReloading(false);
+          }}
+          disabled={isReloading}
+          style={{
+            margin: '8px 0 16px 0',
+            padding: '8px 16px',
+            background: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          {isReloading ? 'Reloading...' : 'Reload messages'}
+        </button>
+
 
         {keyStatus !== 'shared' && (
           <div style={{ background: '#fff3cd', color: '#856404', padding: '12px', borderRadius: '6px', marginBottom: '12px', fontWeight: 'bold' }}>
