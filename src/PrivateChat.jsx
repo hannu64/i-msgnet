@@ -693,8 +693,8 @@ function PrivateChat() {
       </div>
 
 
-/* dustbins location */
-/*      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'visible', padding: '10px 0', display: 'flex', flexDirection: 'column', position: 'relative' }}> */
+{/* padding: '20px 40px', dustbins location */}
+{/* <div style={{ flex: 1, overflowY: 'auto', overflowX: 'visible', padding: '10px 0', display: 'flex', flexDirection: 'column', position: 'relative' }}> */}
 
 <div style={{
   flex: 1,
@@ -705,7 +705,7 @@ function PrivateChat() {
   flexDirection: 'column',
   width: '100%',
   boxSizing: 'border-box'
-}}></div>
+}}>
 
         {decryptedMessages.map((msg, idx) => (
           <div
