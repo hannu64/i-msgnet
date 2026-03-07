@@ -465,8 +465,9 @@ useEffect(() => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '20px', boxSizing: 'border-box' }}>
-      <h2>Chat {chatId.slice(0, 8)}...</h2>
 
+
+      <h2>Chat {chatId.slice(0, 8)}...</h2>
       <button
         onClick={async () => {
           setIsReloading(true);
@@ -477,16 +478,20 @@ useEffect(() => {
         disabled={isReloading}
         style={{
           marginLeft: '16px',
-          padding: '6px 12px',
-          background: '#007bff',
+          padding: '8px 16px',
+          background: isReloading ? '#6c757d' : '#007bff',
           color: 'white',
           border: 'none',
           borderRadius: '6px',
-          cursor: 'pointer'
+          cursor: isReloading ? 'not-allowed' : 'pointer',
+          minWidth: '140px',           // ← ensures visible width
+          fontSize: '14px',
+          transition: 'background 0.2s'
         }}
       >
         {isReloading ? 'Reloading...' : 'Reload messages'}
       </button>
+
 
       {showNamePrompt && (
         <div style={{
