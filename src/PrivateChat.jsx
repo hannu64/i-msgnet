@@ -52,7 +52,7 @@ function PrivateChat() {
   const [passphrase, setPassphrase] = useState('');
   const [passphraseError, setPassphraseError] = useState('');
   const [showPassphrase, setShowPassphrase] = useState(false);
-  const [deleteConfirmEncrypted, setDeleteConfirmEncrypted] = useState(null);
+  const [lifespanHours, setLifespanHours] = useState('24');
   const messagesEndRef = useRef(null);
 
   // Improved timestamp formatting
@@ -149,7 +149,7 @@ function PrivateChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [decryptedMessages]);
 
-  // Polling (extracted so it can be called manually)
+  // Polling (extracted as function)
   const pollMessages = async () => {
     try {
       const res = await fetch(`https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`);
@@ -335,7 +335,12 @@ function PrivateChat() {
     combined.set(iv);
     combined.set(new Uint8Array(encrypted), iv.length);
     const base64 = btoa(String.fromCharCode(...combined));
-    const msg = { encrypted: base64, sender: 'me', timestamp: Date.now() };
+    const msg = { 
+      encrypted: base64, 
+      sender: 'me', 
+      timestamp: Date.now(),
+      lifespanHours: lifespanHours === 'null' ? null : parseInt(lifespanHours)
+    };
     const updated = [...messages, msg];
     setMessages(updated);
     localStorage.setItem(`messages_${chatId}`, JSON.stringify(updated));
@@ -344,7 +349,11 @@ function PrivateChat() {
       await fetch('https://i-msgnet-backend-production.up.railway.app/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatId, encrypted: base64 })
+        body: JSON.stringify({ 
+          chatId, 
+          encrypted: base64,
+          lifespanHours: msg.lifespanHours
+        })
       });
     } catch (err) {
       console.error('Backend send failed:', err);
@@ -678,7 +687,7 @@ function PrivateChat() {
         </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 20px', display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box' }}>
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'visible', padding: '10px 0', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         {decryptedMessages.map((msg, idx) => (
           <div
             key={idx}
@@ -693,8 +702,7 @@ function PrivateChat() {
               boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
               wordBreak: 'break-word',
               position: 'relative',
-              overflow: 'visible',
-              width: 'fit-content'
+              overflow: 'visible'
             }}
           >
             {msg.text}
@@ -741,6 +749,36 @@ function PrivateChat() {
       </div>
 
       <div style={{ display: 'flex', paddingTop: '10px', borderTop: '1px solid #eee' }}>
+        <div style={{ marginBottom: '12px', display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <label style={{ fontWeight: 'bold' }}>Delete after:</label>
+          <label>
+            <input
+              type="radio"
+              name="lifespan"
+              value="24"
+              checked={lifespanHours === '24'}
+              onChange={() => setLifespanHours('24')}
+            /> 24 hours
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="lifespan"
+              value="192"
+              checked={lifespanHours === '192'}
+              onChange={() => setLifespanHours('192')}
+            /> 8 days
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="lifespan"
+              value="null"
+              checked={lifespanHours === 'null'}
+              onChange={() => setLifespanHours('null')}
+            /> No limit
+          </label>
+        </div>
         <input
           type="text"
           value={newMessage}
@@ -753,7 +791,7 @@ function PrivateChat() {
           onClick={sendMessage}
           style={{ marginLeft: '10px', padding: '12px 24px', background: '#25D366', color: 'white', border: 'none', borderRadius: '20px', cursor: 'pointer' }}
         >
-          Send
+          Send It
         </button>
       </div>
     </div>
