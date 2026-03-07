@@ -56,7 +56,7 @@ function PrivateChat() {
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
   const messagesEndRef = useRef(null);
-  const prevMessagesLengthRef = useRef(0); // track previous length for new message detection
+  const prevMessagesLengthRef = useRef(0); // to detect new messages
 
   // Improved timestamp formatting
   const formatMessageTime = (timestamp) => {
@@ -450,6 +450,27 @@ function PrivateChat() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '20px', boxSizing: 'border-box' }}>
       <h2>Chat {chatId.slice(0, 8)}...</h2>
+
+      <button
+        onClick={async () => {
+          setIsReloading(true);
+          localStorage.removeItem(`messages_${chatId}`);
+          await pollMessages();
+          setIsReloading(false);
+        }}
+        disabled={isReloading}
+        style={{
+          marginLeft: '16px',
+          padding: '6px 12px',
+          background: '#007bff',
+          color: 'white',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: 'pointer'
+        }}
+      >
+        {isReloading ? 'Reloading...' : 'Reload messages'}
+      </button>
 
       {showNamePrompt && (
         <div style={{
