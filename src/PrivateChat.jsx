@@ -741,10 +741,11 @@ function PrivateChat() {
                 position: 'absolute',
                 top: '-18px',
 
-                right: msg.sender === 'me' ? '2px' : 'auto', // dustbin location
-                left: msg.sender === 'them' ? '-0px' : 'auto', // dustbin location
-//                right: msg.sender === 'me' ? '-28px' : 'auto', // dustbin location
-//                left: msg.sender === 'them' ? '-28px' : 'auto', // dustbin location
+                // dustbin location
+                right: msg.sender === 'me' ? '2px' : 'auto', 
+                left: msg.sender === 'them' ? '-0px' : 'auto', 
+//                right: msg.sender === 'me' ? '-28px' : 'auto', 
+//                left: msg.sender === 'them' ? '-28px' : 'auto', 
 
                 background: 'rgba(255,255,255,0.9)',
                 border: '1px solid #dc3545',
