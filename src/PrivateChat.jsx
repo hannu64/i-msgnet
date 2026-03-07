@@ -721,8 +721,8 @@ function PrivateChat() {
               style={{
                 position: 'absolute',
                 top: '-18px',
-                right: msg.sender === 'me' ? '-20px' : 'auto',
-                left: msg.sender === 'them' ? '-20px' : 'auto',
+                right: msg.sender === 'me' ? '-10px' : 'auto',
+                left: msg.sender === 'them' ? '-10px' : 'auto',
                 background: 'rgba(255,255,255,0.9)',
                 border: '1px solid #dc3545',
                 borderRadius: '50%',
