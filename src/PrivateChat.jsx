@@ -55,6 +55,7 @@ function PrivateChat() {
   const [lifespanHours, setLifespanHours] = useState('24');
   const messagesEndRef = useRef(null);
   const [isReloading, setIsReloading] = useState(false);
+  const wasAtBottomRef = useRef(true); // track if user was at bottom before update
 
 
   // Improved timestamp formatting
@@ -147,20 +148,43 @@ function PrivateChat() {
   }, [messages, cryptoKey]);
 
 
+
+
   // Auto-scroll
 
-  useEffect(() => {
-  if (messagesEndRef.current) {
-    // Only scroll if at bottom already or new messages added
-    const isAtBottom = 
-      messagesEndRef.current.getBoundingClientRect().bottom <= 
-      (window.innerHeight || document.documentElement.clientHeight);
+// Replace your current auto-scroll useEffect with this
+useEffect(() => {
+  if (!messagesEndRef.current) return;
 
-    if (isAtBottom) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+  // Check if user is currently at bottom
+  const isAtBottom = 
+    messagesEndRef.current.getBoundingClientRect().bottom <= 
+    (window.innerHeight || document.documentElement.clientHeight) + 50; // small buffer
+
+  // Update ref for next render
+  wasAtBottomRef.current = isAtBottom;
+
+  // Scroll conditions:
+  // 1. User was at bottom before this update → scroll to new message
+  // 2. New messages arrived → scroll (but only if wasAtBottom)
+  if (wasAtBottomRef.current) {
+    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
   }
-}, [decryptedMessages]);
+}, [decryptedMessages]); // trigger on decrypted change (new messages)
+
+useEffect(() => {
+  const checkScroll = () => {
+    if (messagesEndRef.current) {
+      const rect = messagesEndRef.current.getBoundingClientRect();
+      const isAtBottom = rect.bottom <= window.innerHeight + 50;
+      if (isAtBottom) setHasNewMessages(false);
+    }
+  };
+  window.addEventListener('scroll', checkScroll);
+  return () => window.removeEventListener('scroll', checkScroll);
+}, []);
+
+
 
 
   // Polling (extracted as function)
