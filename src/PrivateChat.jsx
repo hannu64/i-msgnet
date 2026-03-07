@@ -693,8 +693,8 @@ function PrivateChat() {
       </div>
 
 
-// dustbins location 
-//      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'visible', padding: '10px 0', display: 'flex', flexDirection: 'column', position: 'relative' }}> 
+/* dustbins location */
+/*      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'visible', padding: '10px 0', display: 'flex', flexDirection: 'column', position: 'relative' }}> */
 
 <div style={{
   flex: 1,
@@ -741,11 +741,11 @@ function PrivateChat() {
                 position: 'absolute',
                 top: '-18px',
 
-// dustbin locations
+/* dustbin locations */
                 right: msg.sender === 'me' ? '2px' : 'auto', 
                 left: msg.sender === 'them' ? '-0px' : 'auto', 
-//                right: msg.sender === 'me' ? '-28px' : 'auto', 
-//                left: msg.sender === 'them' ? '-28px' : 'auto', 
+/*                right: msg.sender === 'me' ? '-28px' : 'auto', */
+/*                left: msg.sender === 'them' ? '-28px' : 'auto',  */
 
                 background: 'rgba(255,255,255,0.9)',
                 border: '1px solid #dc3545',
