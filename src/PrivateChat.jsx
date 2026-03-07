@@ -56,8 +56,9 @@ function PrivateChat() {
   const [hasNewMessages, setHasNewMessages] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
   const messagesEndRef = useRef(null);
+  const prevMessagesLengthRef = useRef(0);
 
-  // Improved timestamp formatting (used in bubbles)
+  // Improved timestamp formatting
   const formatMessageTime = (timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -68,22 +69,16 @@ function PrivateChat() {
       minute: '2-digit',
       hour12: false
     });
-    if (isToday) {
-      return timeStr; // "16:00"
-    }
-    // European DD.MM with short weekday
+    if (isToday) return timeStr;
     let datePart = date.toLocaleDateString('fi-FI', {
       weekday: 'short',
       day: '2-digit',
       month: '2-digit'
     });
-    // Add year if older than 7 days
     const diffTime = Math.abs(now - date);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays > 7) {
-      datePart += `.${date.getFullYear()}`;
-    }
-    return `${datePart} ${timeStr}`; // e.g. "Pe 27.02 16:00" or "Pe 27.02.2026 16:00"
+    if (diffDays > 7) datePart += `.${date.getFullYear()}`;
+    return `${datePart} ${timeStr}`;
   };
 
   // Load messages
@@ -96,9 +91,7 @@ function PrivateChat() {
   useEffect(() => {
     const storedChats = JSON.parse(localStorage.getItem('chats')) || [];
     const existing = storedChats.find(c => c.id === chatId);
-    if (!existing) {
-      setShowNamePrompt(true);
-    }
+    if (!existing) setShowNamePrompt(true);
   }, [chatId]);
 
   // Load/use key
@@ -154,12 +147,12 @@ function PrivateChat() {
     decryptAll();
   }, [messages, cryptoKey]);
 
-  // Auto-scroll only when at bottom or new messages
+  // Auto-scroll only when at bottom or new messages arrive
   useEffect(() => {
     if (messagesEndRef.current) {
       const isAtBottom = 
         messagesEndRef.current.getBoundingClientRect().bottom <= 
-        (window.innerHeight || document.documentElement.clientHeight) + 100; // buffer for safety
+        (window.innerHeight || document.documentElement.clientHeight) + 100; // buffer
       if (isAtBottom) {
         messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
       } else if (messages.length > prevMessagesLengthRef.current) {
@@ -168,6 +161,19 @@ function PrivateChat() {
     }
     prevMessagesLengthRef.current = messages.length;
   }, [messages]);
+
+  // Hide "new messages" banner when user scrolls to bottom
+  useEffect(() => {
+    const checkScroll = () => {
+      if (messagesEndRef.current) {
+        const rect = messagesEndRef.current.getBoundingClientRect();
+        const isAtBottom = rect.bottom <= window.innerHeight + 100;
+        if (isAtBottom) setHasNewMessages(false);
+      }
+    };
+    window.addEventListener('scroll', checkScroll);
+    return () => window.removeEventListener('scroll', checkScroll);
+  }, []);
 
   // Polling
   useEffect(() => {
@@ -766,6 +772,30 @@ function PrivateChat() {
         ))}
         <div ref={messagesEndRef} />
       </div>
+
+      {hasNewMessages && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '80px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: '#25D366',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '20px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            cursor: 'pointer',
+            zIndex: 100
+          }}
+          onClick={() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            setHasNewMessages(false);
+          }}
+        >
+          New messages ↓
+        </div>
+      )}
 
       <div style={{ display: 'flex', paddingTop: '10px', borderTop: '1px solid #eee' }}>
         <div style={{ marginBottom: '12px', display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
