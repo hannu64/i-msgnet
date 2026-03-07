@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-// import './styles.css';
+import './styles.css';
 
 // Generate random AES-256 key and export as base64
 const generateKey = async () => {
@@ -21,7 +21,7 @@ const importKey = async (base64Key) => {
   }
   try {
     const raw = Uint8Array.from(atob(base64Key.trim()), c => c.charCodeAt(0));
-    if (raw.length !== 32) { // AES-256 = 32 bytes
+    if (raw.length !== 32) {
       console.warn('Invalid key length:', raw.length);
       return null;
     }
@@ -51,36 +51,11 @@ function PrivateChat() {
   const [showPassphraseInput, setShowPassphraseInput] = useState(false);
   const [passphrase, setPassphrase] = useState('');
   const [passphraseError, setPassphraseError] = useState('');
-  const [showPassphrase, setShowPassphrase] = useState(false); // visibility toggle
+  const [showPassphrase, setShowPassphrase] = useState(false);
+  const [deleteConfirmEncrypted, setDeleteConfirmEncrypted] = useState(null);
   const messagesEndRef = useRef(null);
-  const [lifespanHours, setLifespanHours] = useState('24'); // default 24h
 
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null); // encrypted string of message to delete
-
-  const handleDeleteMessage = async (encrypted) => {
-  if (!window.confirm('Delete this message for everyone? This cannot be undone.')) return;
-
-  try {
-    const res = await fetch(`https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}/${encodeURIComponent(encrypted)}`, {
-      method: 'DELETE',
-    });
-    if (res.ok) {
-      // Remove from local state immediately
-      setMessages(prev => prev.filter(m => m.encrypted !== encrypted));
-      localStorage.setItem(`messages_${chatId}`, JSON.stringify(
-        JSON.parse(localStorage.getItem(`messages_${chatId}`) || '[]').filter(m => m.encrypted !== encrypted)
-      ));
-      setDeleteConfirmId(null);
-    } else {
-      alert('Failed to delete message');
-    }
-  } catch (err) {
-    console.error('Delete failed:', err);
-    alert('Error deleting message');
-  }
-};
-
-  // Improved timestamp formatting (used in bubbles)
+  // Improved timestamp formatting
   const formatMessageTime = (timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -91,22 +66,16 @@ function PrivateChat() {
       minute: '2-digit',
       hour12: false
     });
-    if (isToday) {
-      return timeStr; // "16:00"
-    }
-    // European DD.MM with short weekday
+    if (isToday) return timeStr;
     let datePart = date.toLocaleDateString('fi-FI', {
       weekday: 'short',
       day: '2-digit',
       month: '2-digit'
     });
-    // Add year if older than 7 days
     const diffTime = Math.abs(now - date);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays > 7) {
-      datePart += `.${date.getFullYear()}`;
-    }
-    return `${datePart} ${timeStr}`; // e.g. "Pe 27.02 16:00" or "Pe 27.02.2026 16:00"
+    if (diffDays > 7) datePart += `.${date.getFullYear()}`;
+    return `${datePart} ${timeStr}`;
   };
 
   // Load messages
@@ -119,9 +88,7 @@ function PrivateChat() {
   useEffect(() => {
     const storedChats = JSON.parse(localStorage.getItem('chats')) || [];
     const existing = storedChats.find(c => c.id === chatId);
-    if (!existing) {
-      setShowNamePrompt(true);
-    }
+    if (!existing) setShowNamePrompt(true);
   }, [chatId]);
 
   // Load/use key
@@ -182,28 +149,29 @@ function PrivateChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [decryptedMessages]);
 
-  // Polling
+  // Polling (extracted so it can be called manually)
+  const pollMessages = async () => {
+    try {
+      const res = await fetch(`https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`);
+      if (!res.ok) return;
+      const remoteMsgs = await res.json();
+      setMessages(prevMessages => {
+        const localEncrypted = new Set(prevMessages.map(m => m.encrypted));
+        const incoming = remoteMsgs.filter(rm => !localEncrypted.has(rm.encrypted));
+        if (incoming.length > 0) {
+          const newOnes = incoming.map(rm => ({ encrypted: rm.encrypted, sender: 'them', timestamp: rm.timestamp || Date.now() }));
+          const updated = [...prevMessages, ...newOnes];
+          localStorage.setItem(`messages_${chatId}`, JSON.stringify(updated));
+          return updated;
+        }
+        return prevMessages;
+      });
+    } catch (err) {
+      console.error('Polling error:', err);
+    }
+  };
+
   useEffect(() => {
-    const pollMessages = async () => {
-      try {
-        const res = await fetch(`https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`);
-        if (!res.ok) return;
-        const remoteMsgs = await res.json();
-        setMessages(prevMessages => {
-          const localEncrypted = new Set(prevMessages.map(m => m.encrypted));
-          const incoming = remoteMsgs.filter(rm => !localEncrypted.has(rm.encrypted));
-          if (incoming.length > 0) {
-            const newOnes = incoming.map(rm => ({ encrypted: rm.encrypted, sender: 'them', timestamp: rm.timestamp || Date.now() }));
-            const updated = [...prevMessages, ...newOnes];
-            localStorage.setItem(`messages_${chatId}`, JSON.stringify(updated));
-            return updated;
-          }
-          return prevMessages;
-        });
-      } catch (err) {
-        console.error('Polling error:', err);
-      }
-    };
     pollMessages();
     const interval = setInterval(pollMessages, 8000);
     return () => clearInterval(interval);
@@ -339,14 +307,14 @@ function PrivateChat() {
 
   // Strength helpers
   const getStrengthColor = (pass) => {
-    if (pass.length < 12) return '#dc3545'; // red
-    if (pass.length < 16) return '#fd7e14'; // orange
-    if (pass.length < 20) return '#ffc107'; // yellow
-    return '#28a745'; // green
+    if (pass.length < 12) return '#dc3545';
+    if (pass.length < 16) return '#fd7e14';
+    if (pass.length < 20) return '#ffc107';
+    return '#28a745';
   };
 
   const getStrengthWidth = (pass) => {
-    const len = Math.min(pass.length, 30); // cap visual at 30 chars
+    const len = Math.min(pass.length, 30);
     return `${(len / 30) * 100}%`;
   };
 
@@ -357,49 +325,31 @@ function PrivateChat() {
     return 'Very strong ✓';
   };
 
-
-const sendMessage = async () => {
-  if (!newMessage.trim() || !cryptoKey) return;
-
-  const encoder = new TextEncoder();
-  const data = encoder.encode(newMessage);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, data);
-
-  const combined = new Uint8Array(iv.length + encrypted.byteLength);
-  combined.set(iv);
-  combined.set(new Uint8Array(encrypted), iv.length);
-  const base64 = btoa(String.fromCharCode(...combined));
-
-  // Now base64 is defined → safe to use
-  const msg = { 
-    encrypted: base64, 
-    sender: 'me', 
-    timestamp: Date.now(),
-    lifespanHours: lifespanHours === 'null' ? null : parseInt(lifespanHours)
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !cryptoKey) return;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(newMessage);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, data);
+    const combined = new Uint8Array(iv.length + encrypted.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(encrypted), iv.length);
+    const base64 = btoa(String.fromCharCode(...combined));
+    const msg = { encrypted: base64, sender: 'me', timestamp: Date.now() };
+    const updated = [...messages, msg];
+    setMessages(updated);
+    localStorage.setItem(`messages_${chatId}`, JSON.stringify(updated));
+    setNewMessage('');
+    try {
+      await fetch('https://i-msgnet-backend-production.up.railway.app/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId, encrypted: base64 })
+      });
+    } catch (err) {
+      console.error('Backend send failed:', err);
+    }
   };
-
-  const updated = [...messages, msg];
-  setMessages(updated);
-  localStorage.setItem(`messages_${chatId}`, JSON.stringify(updated));
-  setNewMessage('');
-
-  try {
-    await fetch('https://i-msgnet-backend-production.up.railway.app/api/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        chatId, 
-        encrypted: base64,
-        lifespanHours: msg.lifespanHours  // sent to backend
-      })
-    });
-  } catch (err) {
-    console.error('Backend send failed:', err);
-  }
-};
-
-
 
   const simulateIncoming = async () => {
     if (!cryptoKey) {
@@ -437,6 +387,29 @@ const sendMessage = async () => {
     setShowNamePrompt(false);
     setChatNameInput('');
     window.dispatchEvent(new Event('chatsUpdated'));
+  };
+
+  const handleDeleteMessage = async (encrypted) => {
+    if (!window.confirm('Delete this message for everyone? This cannot be undone.')) return;
+    try {
+      const res = await fetch(
+        `https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}/${encodeURIComponent(encrypted)}`,
+        { method: 'DELETE' }
+      );
+      if (res.ok) {
+        setMessages(prev => prev.filter(m => m.encrypted !== encrypted));
+        localStorage.setItem(`messages_${chatId}`, JSON.stringify(
+          JSON.parse(localStorage.getItem(`messages_${chatId}`) || '[]').filter(m => m.encrypted !== encrypted)
+        ));
+        pollMessages(); // immediate sync
+        alert('Message deleted.');
+      } else {
+        alert('Failed to delete message on server.');
+      }
+    } catch (err) {
+      console.error('Delete failed:', err);
+      alert('Error deleting message.');
+    }
   };
 
   return (
@@ -635,7 +608,6 @@ const sendMessage = async () => {
               </button>
             </div>
 
-            {/* Strength meter + label */}
             <div style={{ marginBottom: '12px' }}>
               {passphrase.length > 0 && (
                 <>
@@ -706,38 +678,14 @@ const sendMessage = async () => {
         </button>
       </div>
 
-
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        overflowX: 'visible',        // ← allow horizontal overflow
-        padding: '10px 0',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative'         // helps with absolute positioning
-      }}>
-
-      
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '10px 20px',           // ← add horizontal padding
-          display: 'flex',
-          flexDirection: 'column',
-          width: '100%',                  // ← force full width
-          boxSizing: 'border-box'         // ← respect padding
-        }}>
-
-
+      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 20px', display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box' }}>
         {decryptedMessages.map((msg, idx) => (
-          
-                
           <div
             key={idx}
             className="message-bubble"
             style={{
               alignSelf: msg.sender === 'me' ? 'flex-end' : 'flex-start',
-              maxWidth: '70%',              // ← this now works with parent width
+              maxWidth: '70%',
               margin: '16px 0',
               padding: '12px 20px',
               borderRadius: '18px',
@@ -746,10 +694,9 @@ const sendMessage = async () => {
               wordBreak: 'break-word',
               position: 'relative',
               overflow: 'visible',
-              width: 'fit-content'          // ← helps with maxWidth
+              width: 'fit-content'
             }}
-          >          
-          
+          >
             {msg.text}
             <div style={{
               fontSize: '0.75em',
@@ -763,79 +710,37 @@ const sendMessage = async () => {
             <button
               onClick={() => handleDeleteMessage(msg.encrypted)}
               className="delete-btn"
-              
-
-            style={{
-              position: 'absolute',
-              top: '-18px',
-              right: msg.sender === 'me' ? '-18px' : 'auto',
-              left: msg.sender === 'them' ? '-20px' : 'auto',   // ← further left for incoming
-              background: 'rgba(255,255,255,0.9)',
-              border: '1px solid #dc3545',
-              borderRadius: '50%',
-              color: '#dc3545',
-              fontSize: '1.2em',
-              cursor: 'pointer',
-              padding: '4px',
-              width: '28px',
-              height: '28px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10,
-              opacity: 0,
-              transition: 'opacity 0.2s',
-              pointerEvents: 'auto'
-            }}
-
-
+              style={{
+                position: 'absolute',
+                top: '-18px',
+                right: msg.sender === 'me' ? '-18px' : 'auto',
+                left: msg.sender === 'them' ? '-18px' : 'auto',
+                background: 'rgba(255,255,255,0.9)',
+                border: '1px solid #dc3545',
+                borderRadius: '50%',
+                color: '#dc3545',
+                fontSize: '1.2em',
+                cursor: 'pointer',
+                padding: '4px',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 10,
+                opacity: 0,
+                transition: 'opacity 0.2s'
+              }}
               title="Delete message"
             >
               🗑
             </button>
           </div>
         ))}
-
-      </div>
-
         <div ref={messagesEndRef} />
       </div>
 
-
-
       <div style={{ display: 'flex', paddingTop: '10px', borderTop: '1px solid #eee' }}>
-
-        <div style={{ marginBottom: '12px', display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <label style={{ fontWeight: 'bold' }}>Delete after:</label>
-          <label>
-            <input
-              type="radio"
-              name="lifespan"
-              value="24"
-              checked={lifespanHours === '24'}
-              onChange={() => setLifespanHours('24')}
-            /> 24 hours
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="lifespan"
-              value="192"
-              checked={lifespanHours === '192'}
-              onChange={() => setLifespanHours('192')}
-            /> 8 days
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="lifespan"
-              value="null"
-              checked={lifespanHours === 'null'}
-              onChange={() => setLifespanHours('null')}
-            /> No limit
-          </label>
-        </div>
-
         <input
           type="text"
           value={newMessage}
@@ -848,7 +753,7 @@ const sendMessage = async () => {
           onClick={sendMessage}
           style={{ marginLeft: '10px', padding: '12px 24px', background: '#25D366', color: 'white', border: 'none', borderRadius: '20px', cursor: 'pointer' }}
         >
-          Send It
+          Send
         </button>
       </div>
     </div>
