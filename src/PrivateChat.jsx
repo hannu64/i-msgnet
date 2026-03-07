@@ -54,6 +54,8 @@ function PrivateChat() {
   const [showPassphrase, setShowPassphrase] = useState(false);
   const [lifespanHours, setLifespanHours] = useState('24');
   const messagesEndRef = useRef(null);
+  const [isReloading, setIsReloading] = useState(false);
+
 
   // Improved timestamp formatting
   const formatMessageTime = (timestamp) => {
@@ -144,10 +146,21 @@ function PrivateChat() {
     decryptAll();
   }, [messages, cryptoKey]);
 
+
   // Auto-scroll
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [decryptedMessages]);
+  if (messagesEndRef.current) {
+    // Only scroll if at bottom already or new messages added
+    const isAtBottom = 
+      messagesEndRef.current.getBoundingClientRect().bottom <= 
+      (window.innerHeight || document.documentElement.clientHeight);
+
+    if (isAtBottom) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+}, [decryptedMessages]);
 
 
   // Polling (extracted as function)
@@ -429,6 +442,27 @@ function PrivateChat() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '20px', boxSizing: 'border-box' }}>
       <h2>Chat {chatId.slice(0, 8)}...</h2>
+
+      <button
+        onClick={async () => {
+          setIsReloading(true);
+          localStorage.removeItem(`messages_${chatId}`);
+          await pollMessages();
+          setIsReloading(false);
+        }}
+        disabled={isReloading}
+        style={{
+          marginLeft: '16px',
+          padding: '6px 12px',
+          background: '#007bff',
+          color: 'white',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: 'pointer'
+        }}
+      >
+        {isReloading ? 'Reloading...' : 'Reload messages'}
+      </button>
 
       {showNamePrompt && (
         <div style={{
