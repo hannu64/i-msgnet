@@ -162,8 +162,15 @@ function Sidebar() {
                     }}
                   />
                 ) : (
+
                   <button
-                    onClick={() => navigate(`/chat/${chat.id}`)}
+                    
+                    onClick={() => {
+                      navigate(`/chat/${chat.id}`);
+                      window.dispatchEvent(new CustomEvent('chatSelected', { detail: { chatId: chat.id } }));
+                    }}
+
+
                     title={safeName}
                     style={{ 
                       flex: 1, 
@@ -177,6 +184,7 @@ function Sidebar() {
                     {displayName}
                     {localStorage.getItem(`key_${chat.id}`) && <span style={{ color: 'green', marginLeft: '6px' }}>🔒</span>}
                   </button>
+
                 )}
 
                 <div style={{ display: 'flex', gap: '4px' }}>
