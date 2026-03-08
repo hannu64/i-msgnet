@@ -615,20 +615,7 @@ const pollMessages = async () => {
           Clear key / Back to demo
         </button>
 
-        <button
-          onClick={() => setShowReportModal(true)}
-          style={{
-            marginTop: '8px',
-            padding: '8px 16px',
-            background: '#dc3545', // red for report
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer'
-          }}
-        >
-          Report this chat as SPAM
-        </button>
+
 
 
         <div style={{ marginTop: '12px' }}>
@@ -863,7 +850,28 @@ const pollMessages = async () => {
         <button onClick={simulateIncoming} disabled={!cryptoKey} style={{ marginTop: '12px', padding: '8px 16px', background: '#28a745', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
           Simulate incoming message (test decrypt)
         </button>
+
+        <button
+          onClick={() => setShowReportModal(true)}
+          style={{
+          marginTop: '16px', // ← more space above
+          marginLeft: '12px', // ← space from Clear key
+          padding: '8px 16px',
+          background: '#dc3545',
+          color: 'white',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: 'pointer'
+          }}
+        >
+          Report this chat as SPAM
+        </button>
+
+
+
       </div>
+
+
 
 
       <button
