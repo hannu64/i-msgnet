@@ -61,6 +61,11 @@ function PrivateChat() {
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
 
+  const [blockedChats, setBlockedChats] = useState(() => {
+    const stored = localStorage.getItem('blocked_chats');
+    return stored ? JSON.parse(stored) : [];
+  });
+
   // Improved timestamp formatting
   const formatMessageTime = (timestamp) => {
     if (!timestamp) return '';
@@ -867,7 +872,29 @@ const pollMessages = async () => {
           Report this chat as SPAM
         </button>
 
-
+        <button
+          onClick={() => {
+            if (window.confirm('Block this chat? You will not see it again unless unblocked.')) {
+              const newBlocked = [...blockedChats, chatId];
+              setBlockedChats(newBlocked);
+              localStorage.setItem('blocked_chats', JSON.stringify(newBlocked));
+              // Optional: navigate back to sidebar
+              window.location.href = '/';
+            }
+          }}
+          style={{
+            marginTop: '16px',
+            marginLeft: '12px',
+            padding: '8px 16px',
+            background: '#6c757d', // gray for block
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer'
+          }}
+        >
+          Block this chat
+        </button>
 
       </div>
 
