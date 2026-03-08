@@ -125,17 +125,21 @@ function Sidebar() {
       <ul style={{ listStyle: 'none', padding: 0, marginTop: '20px' }}>
 
 
-const blockedChats = JSON.parse(localStorage.getItem('blocked_chats') || '[]');
-
-const normalChats = chats.filter(chat => !blockedChats.includes(chat.id));
-const blockedChatsList = chats.filter(chat => blockedChats.includes(chat.id));
-
-// Sort: normal first, blocked last
-const sortedChats = [...normalChats, ...blockedChatsList];
 
 {sortedChats.map(chat => {
   const isBlocked = blockedChats.includes(chat.id);
   const displayName = chat.name || chat.id.slice(0, 8) + '...';
+
+
+  const blockedChats = JSON.parse(localStorage.getItem('blocked_chats') || '[]');
+
+  const normalChats = chats.filter(chat => !blockedChats.includes(chat.id));
+  const blockedChatsList = chats.filter(chat => blockedChats.includes(chat.id));
+
+  // Sort: normal first, blocked last
+  const sortedChats = [...normalChats, ...blockedChatsList];
+
+
 
   return (
     <div
