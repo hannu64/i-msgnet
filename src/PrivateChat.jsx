@@ -132,6 +132,22 @@ function PrivateChat() {
     })();
   }, [chatId]);
 
+
+  // Block filter: redirect if current chat is blocked
+  useEffect(() => {
+    const storedBlocked = localStorage.getItem('blocked_chats');
+    if (storedBlocked) {
+      const blocked = JSON.parse(storedBlocked);
+      if (blocked.includes(chatId)) {
+        // Redirect to home / sidebar
+        window.location.href = '/';
+        // Optional: show message instead
+        // alert('This chat is blocked.');
+      }
+    }
+  }, [chatId]);
+
+
   // Decrypt
   useEffect(() => {
     if (!cryptoKey) return;
