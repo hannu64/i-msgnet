@@ -486,31 +486,7 @@ useEffect(() => {
       <h2>Chat {chatId.slice(0, 8)}...</h2>
 
 
-      <button
-        onClick={async () => {
-          setIsReloading(true);
-          localStorage.removeItem(`messages_${chatId}`);
-          await pollMessages();
-          if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-          }
-          setIsReloading(false);
-        }}
-        disabled={isReloading}
-        style={{
-          marginLeft: '16px',
-          padding: '6px 12px',
-          background: isReloading ? '#6c757d' : '#6c757d', // gray for secondary look
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: isReloading ? 'not-allowed' : 'pointer',
-          fontSize: '13px',
-          minWidth: '140px'
-        }}
-      >
-        {isReloading ? 'Checking...' : 'Check new messages'}
-      </button>
+
 
 
       {showNamePrompt && (
@@ -593,7 +569,31 @@ useEffect(() => {
         </div>
 
 
-
+      <button
+        onClick={async () => {
+          setIsReloading(true);
+          localStorage.removeItem(`messages_${chatId}`);
+          await pollMessages();
+          if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+          }
+          setIsReloading(false);
+        }}
+        disabled={isReloading}
+        style={{
+          marginLeft: '16px',
+          padding: '6px 12px',
+          background: isReloading ? '#6c757d' : '#6c757d', // gray for secondary look
+          color: 'white',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: isReloading ? 'not-allowed' : 'pointer',
+          fontSize: '13px',
+          minWidth: '140px'
+        }}
+      >
+        {isReloading ? 'Checking...' : 'Check new messages'}
+      </button>
 
 
         {keyStatus !== 'shared' && (
