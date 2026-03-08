@@ -192,8 +192,8 @@ const pollMessages = async () => {
   try {
     const res = await fetch(`https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`);
     if (!res.ok) {
-      console.warn('Poll failed:', res.status);
-      return; // skip on error
+      console.warn('Poll failed with status:', res.status);
+      return; // skip on error, don't overwrite
     }
     const remoteMsgs = await res.json();
 
@@ -201,7 +201,7 @@ const pollMessages = async () => {
     setMessages(prevMessages => {
       const remoteMap = new Map(remoteMsgs.map(m => [m.encrypted, m]));
       const updated = Array.from(remoteMap.values()).map(rm => {
-        // Keep local sender/timestamp if exists, else use remote
+        // Keep local sender/timestamp if exists (for 'me' messages), else use remote
         const local = prevMessages.find(m => m.encrypted === rm.encrypted);
         return local || { encrypted: rm.encrypted, sender: 'them', timestamp: rm.timestamp || Date.now() };
       });
