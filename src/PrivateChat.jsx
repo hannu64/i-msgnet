@@ -486,6 +486,31 @@ useEffect(() => {
       <h2>Chat {chatId.slice(0, 8)}...</h2>
 
 
+        <button
+          onClick={async () => {
+            setIsReloading(true);
+            localStorage.removeItem(`messages_${chatId}`);
+            await pollMessages();
+            if (messagesEndRef.current) {
+              messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+            }
+            setIsReloading(false);
+          }}
+          disabled={isReloading}
+          style={{
+            margin: '8px 0 16px 0',
+            padding: '8px 16px',
+            background: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          {isReloading ? 'Reloading...' : 'Reload messages'}
+        </button>
+
 
       {showNamePrompt && (
         <div style={{
@@ -567,30 +592,7 @@ useEffect(() => {
         </div>
 
 
-        <button
-          onClick={async () => {
-            setIsReloading(true);
-            localStorage.removeItem(`messages_${chatId}`);
-            await pollMessages();
-            if (messagesEndRef.current) {
-              messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-            }
-            setIsReloading(false);
-          }}
-          disabled={isReloading}
-          style={{
-            margin: '8px 0 16px 0',
-            padding: '8px 16px',
-            background: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}
-        >
-          {isReloading ? 'Reloading...' : 'Reload messages'}
-        </button>
+
 
 
         {keyStatus !== 'shared' && (
