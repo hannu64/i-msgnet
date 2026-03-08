@@ -6,9 +6,6 @@ function Sidebar() {
   const [newChatName, setNewChatName] = useState('');
   const [editingChatId, setEditingChatId] = useState(null);
   const [editNameInput, setEditNameInput] = useState('');
-
-  const blockedChats = JSON.parse(localStorage.getItem('blocked_chats') || '[]');
-
   const editInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -114,15 +111,16 @@ function Sidebar() {
   };
 
 
+
+  // Blocked chats logic (inside component, before return)
+  const blockedChats = JSON.parse(localStorage.getItem('blocked_chats') || '[]');
   const normalChats = chats.filter(chat => !blockedChats.includes(chat.id));
   const blockedChatsList = chats.filter(chat => blockedChats.includes(chat.id));
 
   // Sort: normal first, blocked last
   const sortedChats = [...normalChats, ...blockedChatsList];
 
-
   return (
-    
     <div style={{ width: '250px', borderRight: '1px solid #ccc', padding: '10px', overflowY: 'auto' }}>
       <h2>Chats</h2>
       <input
@@ -137,69 +135,143 @@ function Sidebar() {
       <ul style={{ listStyle: 'none', padding: 0, marginTop: '20px' }}>
 
 
-      {sortedChats.map(chat => {
+      {sortedChats.map((chat) => {
+        const isEditing = editingChatId === chat.id;
         const isBlocked = blockedChats.includes(chat.id);
-        const displayName = chat.name || chat.id.slice(0, 8) + '...';
+        const safeName = (typeof chat.name === 'string' && chat.name.trim())
+          ? chat.name
+          : `Chat ${chat.id.slice(0, 8)}...`;
+        const displayName = safeName.length > 28
+          ? safeName.slice(0, 25) + '...'
+          : safeName;
 
         return (
-          <div
+          <li
             key={chat.id}
             style={{
               display: 'flex',
-              alignItems: 'center',
-              padding: '8px',
-              background: location.pathname === `/chat/${chat.id}` ? '#e9ecef' : 'transparent',
-              cursor: 'pointer',
-              opacity: isBlocked ? 0.6 : 1,
+              flexDirection: 'column',
+              marginBottom: '12px',
+              padding: '6px 8px',
+              borderRadius: '6px',
+              background: window.location.pathname === `/chat/${chat.id}` ? '#f0f0f0' : 'transparent',
+              opacity: isBlocked ? 0.6 : 1, // fade blocked chats
             }}
-            onClick={() => navigate(`/chat/${chat.id}`)}
           >
-            <span style={{ flex: 1, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-              {displayName}
-              {isBlocked && ' (blocked)'}
-              {localStorage.getItem(`key_${chat.id}`) && <span style={{ color: 'green', marginLeft: '6px' }}>🔒</span>}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              {isEditing ? (
+                <input
+                  ref={editInputRef}
+                  type="text"
+                  value={editNameInput}
+                  onChange={(e) => setEditNameInput(e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, chat.id)}
+                  onBlur={() => saveEdit(chat.id)}
+                  style={{
+                    flex: 1,
+                    padding: '4px 8px',
+                    border: '1px solid #007bff',
+                    borderRadius: '4px',
+                    outline: 'none'
+                  }}
+                />
+              ) : (
+                <button
+                  onClick={() => navigate(`/chat/${chat.id}`)}
+                  title={safeName}
+                  style={{
+                    flex: 1,
+                    textAlign: 'left',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: '500'
+                  }}
+                >
+                  {displayName}
+                  {isBlocked && ' (blocked)'}
+                  {localStorage.getItem(`key_${chat.id}`) && <span style={{ color: 'green', marginLeft: '6px' }}>🔒</span>}
+                </button>
+              )}
 
-            {isBlocked && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.confirm(`Unblock chat ${displayName}?`)) {
-                    const newBlocked = blockedChats.filter(id => id !== chat.id);
-                    localStorage.setItem('blocked_chats', JSON.stringify(newBlocked));
-                    window.location.reload(); // refresh Sidebar to update list
-                  }
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#dc3545',
-                  cursor: 'pointer',
-                  fontSize: '0.9em',
-                  padding: '4px 8px'
-                }}
-                title="Unblock"
-              >
-                Unblock
-              </button>
-            )}
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {!isEditing && !isBlocked && (
+                  <button
+                    onClick={() => startEdit(chat)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#007bff',
+                      cursor: 'pointer',
+                      fontSize: '1.1em',
+                      padding: '2px 6px'
+                    }}
+                    title="Rename chat"
+                  >
+                    ✏️
+                  </button>
+                )}
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                const updated = chats.filter(c => c.id !== chat.id);
-                localStorage.setItem('chats', JSON.stringify(updated));
-                setChats(updated);
-                window.dispatchEvent(new Event('chatsUpdated'));
-                if (location.pathname === `/chat/${chat.id}`) navigate('/');
-              }}
-              style={{ background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer' }}
-            >
-              🗑
-            </button>
-          </div>
+                {isBlocked && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Unblock chat ${displayName}?`)) {
+                        const newBlocked = blockedChats.filter(id => id !== chat.id);
+                        localStorage.setItem('blocked_chats', JSON.stringify(newBlocked));
+                        window.location.reload(); // refresh Sidebar
+                      }
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#dc3545',
+                      cursor: 'pointer',
+                      fontSize: '0.9em',
+                      padding: '2px 6px'
+                    }}
+                    title="Unblock"
+                  >
+                    Unblock
+                  </button>
+                )}
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeChat(chat.id);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#dc3545',
+                    cursor: 'pointer',
+                    fontSize: '1.3em',
+                    padding: '2px 6px'
+                  }}
+                  title="Remove chat"
+                >
+                  🗑
+                </button>
+              </div>
+            </div>
+
+            {/* Simple sender-based preview */}
+            <div style={{
+              fontSize: '0.85em',
+              color: '#666',
+              marginTop: '4px',
+              paddingLeft: '4px',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              {chat.preview}
+            </div>
+          </li>
         );
       })}
+
 
 
 
