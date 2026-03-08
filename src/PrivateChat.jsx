@@ -57,6 +57,9 @@ function PrivateChat() {
   const [isReloading, setIsReloading] = useState(false);
   const wasAtBottomRef = useRef(true); // track if user was at bottom before update
 
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
 
   // Improved timestamp formatting
   const formatMessageTime = (timestamp) => {
@@ -612,6 +615,22 @@ const pollMessages = async () => {
           Clear key / Back to demo
         </button>
 
+        <button
+          onClick={() => setShowReportModal(true)}
+          style={{
+            marginTop: '8px',
+            padding: '8px 16px',
+            background: '#dc3545', // red for report
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer'
+          }}
+        >
+          Report this chat as SPAM
+        </button>
+
+
         <div style={{ marginTop: '12px' }}>
           <label>Paste shared secret key:</label><br />
           <input
@@ -750,6 +769,96 @@ const pollMessages = async () => {
             </div>
           </div>
         )}
+
+
+        {showReportModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              background: 'white',
+              padding: '24px',
+              borderRadius: '12px',
+              width: '90%',
+              maxWidth: '400px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.25)'
+            }}>
+              <h3 style={{ margin: '0 0 16px 0' }}>Report this chat</h3>
+              <p style={{ margin: '0 0 16px 0', color: '#555' }}>
+                Please select a reason. Reports are anonymous.
+              </p>
+
+              <select
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                style={{ width: '100%', padding: '10px', marginBottom: '12px', borderRadius: '6px' }}
+              >
+                <option value="">Select reason</option>
+                <option value="spam">Spam or unwanted messages</option>
+                <option value="abuse">Abusive or harmful content</option>
+                <option value="other">Other</option>
+              </select>
+
+              <textarea
+                value={reportDetails}
+                onChange={(e) => setReportDetails(e.target.value)}
+                placeholder="Additional details (optional)"
+                style={{ width: '100%', height: '80px', padding: '10px', borderRadius: '6px', marginBottom: '16px' }}
+              />
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportReason('');
+                    setReportDetails('');
+                  }}
+                  style={{ padding: '10px 20px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!reportReason) {
+                      alert('Please select a reason');
+                      return;
+                    }
+                    try {
+                      const res = await fetch('https://i-msgnet-backend-production.up.railway.app/api/reports', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chatId, reason: reportReason, details: reportDetails })
+                      });
+                      if (res.ok) {
+                        alert('Report sent. Thank you!');
+                        setShowReportModal(false);
+                        setReportReason('');
+                        setReportDetails('');
+                      } else {
+                        alert('Failed to send report');
+                      }
+                    } catch (err) {
+                      console.error('Report failed:', err);
+                      alert('Error sending report');
+                    }
+                  }}
+                  disabled={!reportReason}
+                  style={{ padding: '10px 20px', background: reportReason ? '#dc3545' : '#ccc', color: 'white', border: 'none', borderRadius: '6px', cursor: reportReason ? 'pointer' : 'not-allowed' }}
+                >
+                  Submit Report
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+
 
         <button onClick={simulateIncoming} disabled={!cryptoKey} style={{ marginTop: '12px', padding: '8px 16px', background: '#28a745', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
           Simulate incoming message (test decrypt)
