@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import './styles.css';
+// import './styles.css';
 
 // Generate random AES-256 key and export as base64
 const generateKey = async () => {
