@@ -242,6 +242,8 @@ function Sidebar() {
         Login / Create account
       </button>
 
+      <p>Logged in as {localStorage.getItem('username')}</p>
+
       {/* Auth modal */}
       {showAuthModal && (
         <div style={{
@@ -336,10 +338,7 @@ function Sidebar() {
               >
                 {authMode === 'login' ? 'Login' : 'Register'}
               </button>
-
-
-              <p>Logged in as {localStorage.getItem('username')}</p>
-
+            
 
             </div>
 
