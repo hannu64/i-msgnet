@@ -512,7 +512,7 @@ const pollMessages = async () => {
 
 
       <a
-        href="/faq/index.html"  // or /faq.html if you rename
+        href="/faq.html"  // or /faq.html if you rename
         target="_blank"
         rel="noopener noreferrer"
         style={{
