@@ -336,6 +336,11 @@ function Sidebar() {
               >
                 {authMode === 'login' ? 'Login' : 'Register'}
               </button>
+
+
+              <p>Logged in as {localStorage.getItem('username')}</p>
+
+
             </div>
 
             <p style={{ marginTop: '16px', textAlign: 'center' }}>
