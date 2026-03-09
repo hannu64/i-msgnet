@@ -9,6 +9,15 @@ function Sidebar() {
   const editInputRef = useRef(null);
   const navigate = useNavigate();
 
+  // Add state at top of Sidebar function
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+
+
   const loadChats = () => {
     try {
       const stored = JSON.parse(localStorage.getItem('chats')) || [];
@@ -122,6 +131,31 @@ function Sidebar() {
 
   return (
     <div style={{ width: '250px', borderRight: '1px solid #ccc', padding: '10px', overflowY: 'auto' }}>
+      
+
+      <p>Logged in as {localStorage.getItem('username')}</p>
+      
+      
+      <button
+        onClick={() => setShowAuthModal(true)}
+        style={{
+          marginTop: '16px',
+          padding: '10px 20px',
+          background: '#007bff',
+          color: 'white',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: 'pointer',
+          width: '100%'
+        }}
+      >
+        Login / Create account
+      </button>
+
+
+      
+      
+      
       <h2>Chats</h2>
       <input
         type="text"
@@ -270,6 +304,120 @@ function Sidebar() {
             </div>
           </li>
         );
+
+
+        // Add modal (at bottom of return, after chat list)
+        {showAuthModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              background: 'white',
+              padding: '24px',
+              borderRadius: '12px',
+              width: '90%',
+              maxWidth: '400px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.25)'
+            }}>
+              <h3 style={{ margin: '0 0 16px 0' }}>
+                {authMode === 'login' ? 'Login' : 'Create Account'}
+              </h3>
+
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Username (min 5 chars)"
+                style={{ width: '100%', padding: '10px', marginBottom: '12px', borderRadius: '6px' }}
+              />
+
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                style={{ width: '100%', padding: '10px', marginBottom: '16px', borderRadius: '6px' }}
+              />
+
+              {error && <p style={{ color: '#dc3545', marginBottom: '16px' }}>{error}</p>}
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => {
+                    setShowAuthModal(false);
+                    setError('');
+                    setUsername('');
+                    setPassword('');
+                  }}
+                  style={{ padding: '10px 20px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '6px' }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={async () => {
+                    if (username.length < 5) {
+                      setError('Username must be at least 5 characters');
+                      return;
+                    }
+                    if (!password) {
+                      setError('Password required');
+                      return;
+                    }
+
+                    try {
+                      const endpoint = authMode === 'login' ? 'login' : 'register';
+                      const res = await fetch(`https://i-msgnet-backend-production.up.railway.app/api/users/${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                      });
+
+                      const data = await res.json();
+
+                      if (res.ok) {
+                        localStorage.setItem('token', data.token);
+                        localStorage.setItem('username', data.username);
+                        setShowAuthModal(false);
+                        setError('');
+                        alert(`Welcome, ${data.username}!`);
+                        // Optional: reload Sidebar or fetch my chats
+                        window.location.reload();
+                      } else {
+                        setError(data.error || 'Error');
+                      }
+                    } catch (err) {
+                      setError('Network error');
+                    }
+                  }}
+                  style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '6px' }}
+                >
+                  {authMode === 'login' ? 'Login' : 'Register'}
+                </button>
+              </div>
+
+              <p style={{ marginTop: '16px', textAlign: 'center' }}>
+                {authMode === 'login' ? (
+                  <span>
+                    No account? <button onClick={() => { setAuthMode('register'); setError(''); }} style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer' }}>Register</button>
+                  </span>
+                ) : (
+                  <span>
+                    Already have account? <button onClick={() => { setAuthMode('login'); setError(''); }} style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer' }}>Login</button>
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
+
       })}
 
 
