@@ -508,6 +508,22 @@ const pollMessages = async () => {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '20px', boxSizing: 'border-box' }}>
 
 
+      <a 
+        href="faq/index.html" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        style={{ 
+          marginLeft: 'auto', 
+          color: '#007bff', 
+          textDecoration: 'none', 
+          fontSize: '0.95em', 
+          alignSelf: 'center' 
+        }}
+      >
+        FAQ / Usein kysytyt kysymykset
+      </a>
+
+
       <h2>Chat {chatId.slice(0, 8)}...</h2>
 
 
