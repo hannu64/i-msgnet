@@ -1,3 +1,7 @@
+[build]
+  command = "cp -r public/* dist/ && parcel build index.html --public-url /"
+  publish = "dist"
+
 [[redirects]]
   from = "/faq"
   to = "/faq.html"
