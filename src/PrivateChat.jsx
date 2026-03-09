@@ -509,7 +509,7 @@ const pollMessages = async () => {
 
 
       <a 
-        href="faq/index.html" 
+        href="/faq/index.html" 
         target="_blank" 
         rel="noopener noreferrer"
         style={{ 
