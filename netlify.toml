@@ -1,10 +1,12 @@
-[build]
-  command = "parcel build index.html --public-url /"
-  publish = "dist"
+[[redirects]]
+  from = "/faq"
+  to = "/faq.html"
+  status = 200
+  force = true
 
 [[redirects]]
-  from = "/faq/*"
-  to = "/faq/index.html"
+  from = "/faq.html"
+  to = "/faq.html"
   status = 200
   force = true
 
