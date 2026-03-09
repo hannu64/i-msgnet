@@ -242,7 +242,7 @@ function Sidebar() {
         Login / Create account
       </button>
 
-      <p>Logged in as {localStorage.getItem('username')}</p>
+      <p>Logged in as: {localStorage.getItem('username')}</p>
 
       {/* Auth modal */}
       {showAuthModal && (
