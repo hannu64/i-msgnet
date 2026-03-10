@@ -460,7 +460,7 @@ function Sidebar() {
                     setAuthError('Network error');
                   }
                 }}
-                disabled={!username || !password || (authMode === 'register' && (!confirmPassword || !acceptedWarning))}
+                disabled={!username || !password || (authMode === 'register' && (!confirmPassword || password !== confirmPassword || !acceptedWarning))}
                 style={{ padding: '10px 20px', background: (username && password) ? '#28a745' : '#ccc', color: 'white', border: 'none', borderRadius: '6px', cursor: (username && password) ? 'pointer' : 'not-allowed' }}
               >
                 {authMode === 'login' ? 'Login' : 'Register'}
