@@ -425,6 +425,13 @@ function Sidebar() {
                         setAuthError('Passwords do not match');
                         return;
                       }
+                    if (!acceptedWarning) {
+                        setAuthError('Accept the scary warning');
+                        return;
+                      }
+
+
+
 
                   }
 
