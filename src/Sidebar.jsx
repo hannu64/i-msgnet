@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const isLoggedIn = !!localStorage.getItem('token');
-const currentUsername = localStorage.getItem('username') || '';
-const [showPassword, setShowPassword] = useState(false);
-const [confirmPassword, setConfirmPassword] = useState('');
-const [acceptedWarning, setAcceptedWarning] = useState(false);
-
-
 function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -19,6 +12,13 @@ function Sidebar() {
   const [editingChatId, setEditingChatId] = useState(null);
   const [editNameInput, setEditNameInput] = useState('');
   const editInputRef = useRef(null);
+
+  const isLoggedIn = !!localStorage.getItem('token');
+  const currentUsername = localStorage.getItem('username') || '';
+  const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [acceptedWarning, setAcceptedWarning] = useState(false);
+
 
   // NEW: Auth modal states
   const [showAuthModal, setShowAuthModal] = useState(false);
