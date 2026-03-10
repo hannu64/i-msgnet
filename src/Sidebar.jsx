@@ -303,13 +303,27 @@ function Sidebar() {
               {authMode === 'login' ? 'Login' : 'Create Account'}
             </h3>
 
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Username (min 5 chars)"
-              style={{ width: '100%', padding: '10px', marginBottom: '12px', borderRadius: '6px' }}
-            />
+
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => {
+              setUsername(e.target.value);
+              if (e.target.value.length < 5) {
+                setAuthError('Username must be at least 5 characters');
+              } else {
+                setAuthError('');
+              }
+            }}
+            onBlur={() => {
+              if (username.length < 5) {
+                setAuthError('Username must be at least 5 characters');
+              }
+            }}
+            placeholder="Username (min 5 chars)"
+            style={{ width: '100%', padding: '10px', marginBottom: '12px', borderRadius: '6px' }}
+          />
+
 
 
 
@@ -318,8 +332,21 @@ function Sidebar() {
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (authMode === 'register') {
+                  if (e.target.value.length < 10) {
+                    setAuthError('Password must be at least 10 characters');
+                  } else if (confirmPassword && e.target.value !== confirmPassword) {
+                    setAuthError('Passwords do not match');
+                  } else {
+                    setAuthError('');
+                  }
+                } else {
+                  setAuthError(''); // clear error in login mode
+                }
+              }}
+              placeholder="Password (min 10 chars)"
               style={{ width: '100%', padding: '10px 40px 10px 10px', borderRadius: '6px' }}
             />
             <button
@@ -341,33 +368,26 @@ function Sidebar() {
             </button>
           </div>
 
+
+
+
           {/* Confirm password (only register) */}
           {authMode === 'register' && (
             <div style={{ position: 'relative', marginBottom: '16px' }}>
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  if (password && e.target.value !== password) {
+                    setAuthError('Passwords do not match');
+                  } else {
+                    setAuthError('');
+                  }
+                }}
                 placeholder="Confirm password"
                 style={{ width: '100%', padding: '10px 40px 10px 10px', borderRadius: '6px' }}
               />
-
-
-              {authMode === 'register' && (
-                <div style={{ marginBottom: '16px', color: '#dc3545', fontWeight: 'bold' }}>
-                  <p>⚠️ i-msgnet does NOT know who you are and CANNOT retrieve your password if you forget it. Make sure you have written it down or memorized it!</p>
-                  <label style={{ display: 'flex', alignItems: 'center', marginTop: '8px' }}>
-                    <input
-                      type="checkbox"
-                      checked={acceptedWarning}
-                      onChange={(e) => setAcceptedWarning(e.target.checked)}
-                      style={{ marginRight: '8px' }}
-                    />
-                    I understand and accept that passwords are not recoverable.
-                  </label>
-                </div>
-              )}
-
 
               <button
                 type="button"
@@ -389,6 +409,29 @@ function Sidebar() {
             </div>
           )}
 
+
+
+          {authMode === 'register' && (
+            <div style={{ marginBottom: '16px', color: '#dc3545', fontWeight: 'bold' }}>
+              <p>⚠️ i-msgnet does NOT know who you are and CANNOT retrieve your password if you forget it. Make sure you have written it down or memorized it!</p>
+              <label style={{ display: 'flex', alignItems: 'center', marginTop: '8px' }}>
+                <input
+                  type="checkbox"
+                  checked={acceptedWarning}
+                  onChange={(e) => {
+                    setAcceptedWarning(e.target.checked);
+                    if (!e.target.checked && authMode === 'register') {
+                      setAuthError('You must accept the warning to register');
+                    } else {
+                      setAuthError('');
+                    }
+                  }}
+                  style={{ marginRight: '8px' }}
+                />
+                I understand and accept that passwords are not recoverable.
+              </label>
+            </div>
+          )}
 
 
 
@@ -460,7 +503,7 @@ function Sidebar() {
                     setAuthError('Network error');
                   }
                 }}
-                disabled={!username || !password || (authMode === 'register' && (!confirmPassword || password !== confirmPassword || !acceptedWarning))}
+                disabled={!username || !password || (authMode === 'register' && (!confirmPassword || password !== confirmPassword || !acceptedWarning || username.length < 5 || password.length < 10 ))}
                 style={{ padding: '10px 20px', background: (username && password) ? '#28a745' : '#ccc', color: 'white', border: 'none', borderRadius: '6px', cursor: (username && password) ? 'pointer' : 'not-allowed' }}
               >
                 {authMode === 'login' ? 'Login' : 'Register'}
