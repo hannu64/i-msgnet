@@ -412,8 +412,8 @@ function Sidebar() {
 
 
           {authMode === 'register' && (
-            <div style={{ marginBottom: '16px', color: '#dc3545', fontWeight: 'bold' }}>
-              <p>⚠️ i-msgnet does NOT know who you are and CANNOT retrieve your password if you forget it. Make sure you have written it down or memorized it!</p>
+            <div style={{ marginBottom: '15px', color: '#cc0000', fontWeight: 'normal' }}>
+              <p>⚠️ i-msg.net does NOT know who you are and CANNOT retrieve your password if you forget it. Make sure you have written it down or memorized it!</p>
               <label style={{ display: 'flex', alignItems: 'center', marginTop: '8px' }}>
                 <input
                   type="checkbox"
@@ -436,7 +436,7 @@ function Sidebar() {
 
 
 
-            {authError && <p style={{ color: '#dc3545', marginBottom: '16px' }}>{authError}</p>}
+            {authError && <p style={{ color: '#ff0000', fontWeight: 'bold', marginBottom: '17px' }}>{authError}</p>}
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
               <button
