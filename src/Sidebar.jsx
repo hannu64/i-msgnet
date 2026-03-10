@@ -351,6 +351,24 @@ function Sidebar() {
                 placeholder="Confirm password"
                 style={{ width: '100%', padding: '10px 40px 10px 10px', borderRadius: '6px' }}
               />
+
+
+              {authMode === 'register' && (
+                <div style={{ marginBottom: '16px', color: '#dc3545', fontWeight: 'bold' }}>
+                  <p>⚠️ i-msgnet does NOT know who you are and CANNOT retrieve your password if you forget it. Make sure you have written it down or memorized it!</p>
+                  <label style={{ display: 'flex', alignItems: 'center', marginTop: '8px' }}>
+                    <input
+                      type="checkbox"
+                      checked={acceptedWarning}
+                      onChange={(e) => setAcceptedWarning(e.target.checked)}
+                      style={{ marginRight: '8px' }}
+                    />
+                    I understand and accept that passwords are not recoverable.
+                  </label>
+                </div>
+              )}
+
+
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
