@@ -235,7 +235,7 @@ function Sidebar() {
 
       {isLoggedIn ? (
         <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-          <p>Logged in as <strong>{currentUsername}</strong></p>
+          <p>Logged in as: <strong>{currentUsername}</strong></p>
           <button
             onClick={() => {
               if (window.confirm('Logout? You will need to login again to access My chats.')) {
@@ -445,7 +445,6 @@ function Sidebar() {
       )}
 
 
-      <p>Logged in as: {localStorage.getItem('username')}</p>
 
     </div>
   );
