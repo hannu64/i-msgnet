@@ -678,8 +678,8 @@ const pollMessages = async () => {
             <strong>Enter shared passphrase</strong><br />
             <small style={{ color: '#555', lineHeight: '1.5' }}>
               Both you and your friend must type the <strong>exact same passphrase</strong> (minimum 12 characters).<br />
-              Agree on it outside this chat (phone, in person, secure message — never type it here!). <br />
-              Never use the same string as your <strong>account password and for chat key</strong> - (your friend would know your account password!)
+              Agree on it outside this chat (phone, in person, secure message — never type it in this chat!). <br />
+              Never use the same string as your <strong>account password and chat key</strong> - (your friend would know your account password!)
             </small>
 
             <div style={{ position: 'relative', margin: '16px 0' }}>
