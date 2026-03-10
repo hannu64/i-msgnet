@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+
 const isLoggedIn = !!localStorage.getItem('token');
 const currentUsername = localStorage.getItem('username') || '';
 const [showPassword, setShowPassword] = useState(false);
@@ -256,31 +257,26 @@ function Sidebar() {
             Logout
           </button>
         </div>
+
       ) : (
 
-            
-            <button
-              onClick={() => setShowAuthModal(true)}
-              style={{
-                marginTop: '16px',
-                padding: '10px 20px',
-                background: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                width: '100%'
-              }}
-            >
-              Login / Create account
-            </button>
+        <button
+          onClick={() => setShowAuthModal(true)}
+          style={{
+            marginTop: '16px',
+            padding: '10px 20px',
+            background: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            width: '100%'
+          }}
+        >
+          Login / Create account
+        </button>
 
       )}
-
-
-      <p>Logged in as: {localStorage.getItem('username')}</p>
-
-      
 
 
 
@@ -447,6 +443,10 @@ function Sidebar() {
           </div>
         </div>
       )}
+
+
+      <p>Logged in as: {localStorage.getItem('username')}</p>
+
     </div>
   );
 }
