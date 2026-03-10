@@ -310,14 +310,14 @@ function Sidebar() {
             onChange={(e) => {
               setUsername(e.target.value);
               if (e.target.value.length < 5) {
-                setAuthError('Username must be at least 5 characters');
+                setAuthError('Username must be at least 5 chars');
               } else {
                 setAuthError('');
               }
             }}
             onBlur={() => {
               if (username.length < 5) {
-                setAuthError('Username must be at least 5 characters');
+                setAuthError('Username must be at least 5 chars');
               }
             }}
             placeholder="Username (min 5 chars)"
@@ -336,7 +336,7 @@ function Sidebar() {
                 setPassword(e.target.value);
                 if (authMode === 'register') {
                   if (e.target.value.length < 10) {
-                    setAuthError('Password must be at least 10 characters');
+                    setAuthError('Password must be at least 10 chars');
                   } else if (confirmPassword && e.target.value !== confirmPassword) {
                     setAuthError('Passwords do not match');
                   } else {
@@ -428,7 +428,7 @@ function Sidebar() {
                   }}
                   style={{ marginRight: '8px' }}
                 />
-                I understand and accept that passwords are not recoverable.
+                I understand that passwords are not recoverable.
               </label>
             </div>
           )}
@@ -456,6 +456,11 @@ function Sidebar() {
 
                   if (authMode === 'register') {
 
+                    if (!acceptedWarning) {
+                      setAuthError('Accept the scary warning');
+                      return;
+                    }
+
                     if (username.length < 5) {
                       setAuthError('Username must be at least 5 char');
                       return;
@@ -466,10 +471,6 @@ function Sidebar() {
                     }
                     if (password !== confirmPassword) {
                         setAuthError('Passwords do not match');
-                        return;
-                      }
-                    if (!acceptedWarning) {
-                        setAuthError('Accept the scary warning');
                         return;
                       }
 
