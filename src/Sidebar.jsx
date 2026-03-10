@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+const isLoggedIn = !!localStorage.getItem('token');
+const currentUsername = localStorage.getItem('username') || '';
+const [showPassword, setShowPassword] = useState(false);
+const [confirmPassword, setConfirmPassword] = useState('');
+const [acceptedWarning, setAcceptedWarning] = useState(false);
+
 
 function Sidebar() {
   const navigate = useNavigate();
@@ -225,22 +231,52 @@ function Sidebar() {
         })}
       </ul>
 
-      {/* Login/Create account button */}
-      <button
-        onClick={() => setShowAuthModal(true)}
-        style={{
-          marginTop: '16px',
-          padding: '10px 20px',
-          background: '#007bff',
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          width: '100%'
-        }}
-      >
-        Login / Create account
-      </button>
+
+      {isLoggedIn ? (
+        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+          <p>Logged in as <strong>{currentUsername}</strong></p>
+          <button
+            onClick={() => {
+              if (window.confirm('Logout? You will need to login again to access My chats.')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('username');
+                setShowAuthModal(false);
+                window.location.reload();
+              }
+            }}
+            style={{
+              padding: '10px 20px',
+              background: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            Logout
+          </button>
+        </div>
+      ) : (
+
+            
+            <button
+              onClick={() => setShowAuthModal(true)}
+              style={{
+                marginTop: '16px',
+                padding: '10px 20px',
+                background: '#007bff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                width: '100%'
+              }}
+            >
+              Login / Create account
+            </button>
+
+      )}
+
 
       <p>Logged in as: {localStorage.getItem('username')}</p>
 
@@ -275,13 +311,59 @@ function Sidebar() {
               style={{ width: '100%', padding: '10px', marginBottom: '12px', borderRadius: '6px' }}
             />
 
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              style={{ width: '100%', padding: '10px', marginBottom: '16px', borderRadius: '6px' }}
-            />
+
+            <div style={{ position: 'relative', marginBottom: '16px' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                style={{ width: '100%', padding: '10px 40px 10px 10px', borderRadius: '6px' }}
+              />
+              {authMode === 'register' && (
+                  <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm password"
+                  style={{ width: '100%', padding: '10px', marginBottom: '16px', borderRadius: '6px' }}
+                />
+              )}
+
+              {authMode === 'register' && (
+                <div style={{ marginBottom: '16px', color: '#dc3545', fontWeight: 'bold' }}>
+                  <p>⚠️ i-msgnet does NOT know who you are and CANNOT retrieve your password if you forget it. Make sure you have written it down or memorized it!</p>
+                  <label style={{ display: 'flex', alignItems: 'center', marginTop: '8px' }}>
+                    <input
+                      type="checkbox"
+                      checked={acceptedWarning}
+                      onChange={(e) => setAcceptedWarning(e.target.checked)}
+                      style={{ marginRight: '8px' }}
+                    />
+                    I understand and accept that passwords are not recoverable.
+                  </label>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.2em',
+                  cursor: 'pointer',
+                  color: '#555'
+                }}
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
+
 
             {authError && <p style={{ color: '#dc3545', marginBottom: '16px' }}>{authError}</p>}
 
@@ -309,6 +391,11 @@ function Sidebar() {
                     return;
                   }
 
+                  if (authMode === 'register' && password !== confirmPassword) {
+                    setAuthError('Passwords do not match');
+                    return;
+                  }
+
                   try {
                     const endpoint = authMode === 'login' ? 'login' : 'register';
                     const res = await fetch(`https://i-msgnet-backend-production.up.railway.app/api/users/${endpoint}`, {
@@ -333,7 +420,7 @@ function Sidebar() {
                     setAuthError('Network error');
                   }
                 }}
-                disabled={!username || !password}
+                disabled={!username || !password || (authMode === 'register' && (!confirmPassword || !acceptedWarning))}
                 style={{ padding: '10px 20px', background: (username && password) ? '#28a745' : '#ccc', color: 'white', border: 'none', borderRadius: '6px', cursor: (username && password) ? 'pointer' : 'not-allowed' }}
               >
                 {authMode === 'login' ? 'Login' : 'Register'}
