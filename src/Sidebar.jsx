@@ -414,11 +414,11 @@ function Sidebar() {
                   if (authMode === 'register') {
 
                     if (username.length < 5) {
-                      setAuthError('Username must be at least 5 characters');
+                      setAuthError('Username must be at least 5 char');
                       return;
                     }
                     if (password.length < 10) {
-                      setAuthError('Password must be at least 10 characters');
+                      setAuthError('Password must be at least 10 char');
                       return;
                     }
                     if (password !== confirmPassword) {
