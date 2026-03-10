@@ -312,39 +312,45 @@ function Sidebar() {
             />
 
 
+
+          {/* Password */}
+          <div style={{ position: 'relative', marginBottom: '16px' }}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              style={{ width: '100%', padding: '10px 40px 10px 10px', borderRadius: '6px' }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                fontSize: '1.2em',
+                cursor: 'pointer',
+                color: '#555'
+              }}
+            >
+              {showPassword ? '🙈' : '👁️'}
+            </button>
+          </div>
+
+          {/* Confirm password (only register) */}
+          {authMode === 'register' && (
             <div style={{ position: 'relative', marginBottom: '16px' }}>
               <input
                 type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm password"
                 style={{ width: '100%', padding: '10px 40px 10px 10px', borderRadius: '6px' }}
               />
-              {authMode === 'register' && (
-                  <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm password"
-                  style={{ width: '100%', padding: '10px', marginBottom: '16px', borderRadius: '6px' }}
-                />
-              )}
-
-              {authMode === 'register' && (
-                <div style={{ marginBottom: '16px', color: '#dc3545', fontWeight: 'bold' }}>
-                  <p>⚠️ i-msgnet does NOT know who you are and CANNOT retrieve your password if you forget it. Make sure you have written it down or memorized it!</p>
-                  <label style={{ display: 'flex', alignItems: 'center', marginTop: '8px' }}>
-                    <input
-                      type="checkbox"
-                      checked={acceptedWarning}
-                      onChange={(e) => setAcceptedWarning(e.target.checked)}
-                      style={{ marginRight: '8px' }}
-                    />
-                    I understand and accept that passwords are not recoverable.
-                  </label>
-                </div>
-              )}
-
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -363,6 +369,10 @@ function Sidebar() {
                 {showPassword ? '🙈' : '👁️'}
               </button>
             </div>
+          )}
+
+
+
 
 
             {authError && <p style={{ color: '#dc3545', marginBottom: '16px' }}>{authError}</p>}
@@ -382,19 +392,24 @@ function Sidebar() {
 
               <button
                 onClick={async () => {
-                  if (username.length < 5) {
-                    setAuthError('Username must be at least 5 characters');
-                    return;
-                  }
-                  if (!password) {
-                    setAuthError('Password required');
-                    return;
+
+                  if (authMode === 'register') {
+
+                    if (username.length < 5) {
+                      setAuthError('Username must be at least 5 characters');
+                      return;
+                    }
+                    if (password.length < 10) {
+                      setAuthError('Password must be at least 10 characters');
+                      return;
+                    }
+                    if (password !== confirmPassword) {
+                        setAuthError('Passwords do not match');
+                        return;
+                      }
+
                   }
 
-                  if (authMode === 'register' && password !== confirmPassword) {
-                    setAuthError('Passwords do not match');
-                    return;
-                  }
 
                   try {
                     const endpoint = authMode === 'login' ? 'login' : 'register';
