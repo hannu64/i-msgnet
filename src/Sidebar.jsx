@@ -280,7 +280,11 @@ function Sidebar() {
 
       <p>Logged in as: {localStorage.getItem('username')}</p>
 
-      {/* Auth modal */}
+      
+
+
+
+      
       {showAuthModal && (
         <div style={{
           position: 'fixed',
