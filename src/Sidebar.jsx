@@ -59,6 +59,7 @@ function Sidebar() {
         });
         if (res.ok) {
           const data = await res.json();
+          console.log('My chats data:', data); // ← add this
           setMyChats(data); // you need to add const [myChats, setMyChats] = useState([]); at top
         } else {
           console.warn('My chats fetch failed:', res.status);
