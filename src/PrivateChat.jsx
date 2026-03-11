@@ -431,7 +431,10 @@ const pollMessages = async () => {
     try {
       await fetch('https://i-msgnet-backend-production.up.railway.app/api/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`  // ← add this line
+         },
         body: JSON.stringify({ 
           chatId, 
           encrypted: base64,
