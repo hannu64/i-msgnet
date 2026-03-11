@@ -414,7 +414,7 @@ function Sidebar() {
                     setChangeError('All fields required');
                     return;
                   }
-                  if (newPassword.length < 1) {
+                  if (newPassword.length < 10) {
                     setChangeError('New password must be at least 10 characters');
                     return;
                   }
@@ -490,14 +490,14 @@ function Sidebar() {
             value={username}
             onChange={(e) => {
               setUsername(e.target.value);
-              if (e.target.value.length < 4) {
+              if (e.target.value.length < 5) {
                 setAuthError('Username must be at least 5 chars');
               } else {
                 setAuthError('');
               }
             }}
             onBlur={() => {
-              if (username.length < 4) {
+              if (username.length < 5) {
                 setAuthError('Username must be at least 5 chars');
               }
             }}
@@ -516,7 +516,7 @@ function Sidebar() {
               onChange={(e) => {
                 setPassword(e.target.value);
                 if (authMode === 'register') {
-                  if (e.target.value.length < 1) {
+                  if (e.target.value.length < 10) {
                     setAuthError('Password must be at least 10 chars');
                   } else if (confirmPassword && e.target.value !== confirmPassword) {
                     setAuthError('Passwords do not match');
@@ -642,11 +642,11 @@ function Sidebar() {
                       return;
                     }
 
-                    if (username.length < 4) {
+                    if (username.length < 5) {
                       setAuthError('Username must be at least 5 char');
                       return;
                     }
-                    if (password.length < 1) {
+                    if (password.length < 10) {
                       setAuthError('Password must be at least 10 char');
                       return;
                     }
@@ -685,7 +685,7 @@ function Sidebar() {
                     setAuthError('Network error');
                   }
                 }}
-                disabled={!username || !password || (authMode === 'register' && (!confirmPassword || password !== confirmPassword || !acceptedWarning || username.length < 4 || password.length < 1 ))}
+                disabled={!username || !password || (authMode === 'register' && (!confirmPassword || password !== confirmPassword || !acceptedWarning || username.length < 5 || password.length < 10 ))}
                 style={{ padding: '10px 20px', background: (username && password) ? '#28a745' : '#ccc', color: 'white', border: 'none', borderRadius: '6px', cursor: (username && password) ? 'pointer' : 'not-allowed' }}
               >
                 {authMode === 'login' ? 'Login' : 'Register'}
