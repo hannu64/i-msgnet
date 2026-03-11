@@ -254,8 +254,9 @@ function Sidebar() {
             }}
             style={{
               padding: '10px 20px',
-              background: '#dc3545',
+              background: '#cc3333',
               color: 'white',
+              fontWeight: 'bold',
               border: 'none',
               borderRadius: '6px',
               cursor: 'pointer'
@@ -264,7 +265,7 @@ function Sidebar() {
             Logout
           </button>
 
-        <h3 style={{ color: '#ff0000' }} >Danger area:</h3>
+        <h3 style={{ marginTop: '16px',color: '#ff0000' }} >Danger area:</h3>
 
           <button
             onClick={() => setShowPasswordChangeModal(true)}
@@ -313,7 +314,7 @@ function Sidebar() {
             style={{
               marginTop: '16px',
               padding: '10px 20px',
-              background: '#dc3545',
+              background: '#ff0000',
               color: 'white',
               fontWeight: 'bold',
               border: 'none',
