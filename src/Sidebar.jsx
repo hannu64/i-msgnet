@@ -256,6 +256,50 @@ function Sidebar() {
           >
             Logout
           </button>
+
+
+          <button
+            onClick={async () => {
+              if (window.confirm('Delete account? This removes your username, saved chats and login forever. Anonymous mode will still work.')) {
+                try {
+                  const token = localStorage.getItem('token');
+                  const res = await fetch('https://i-msgnet-backend-production.up.railway.app/api/users/delete', {
+                    method: 'DELETE',
+                    headers: {
+                      'Authorization': `Bearer ${token}`
+                    }
+                  });
+
+                  if (res.ok) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('username');
+                    setShowAuthModal(false);
+                    window.location.reload();
+                    alert('Account deleted successfully.');
+                  } else {
+                    alert('Failed to delete account');
+                  }
+                } catch (err) {
+                  console.error('Delete error:', err);
+                  alert('Network error');
+                }
+              }
+            }}
+            style={{
+              marginTop: '16px',
+              padding: '10px 20px',
+              background: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              width: '100%'
+            }}
+          >
+            Delete my account
+          </button>
+
+
         </div>
 
       ) : (
@@ -280,46 +324,6 @@ function Sidebar() {
 
 
 
-      <button
-        onClick={async () => {
-          if (window.confirm('Delete account? This removes your username, saved chats and login forever. Anonymous mode will still work.')) {
-            try {
-              const token = localStorage.getItem('token');
-              const res = await fetch('https://i-msgnet-backend-production.up.railway.app/api/users/delete', {
-                method: 'DELETE',
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                }
-              });
-
-              if (res.ok) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('username');
-                setShowAuthModal(false);
-                window.location.reload();
-                alert('Account deleted successfully.');
-              } else {
-                alert('Failed to delete account');
-              }
-            } catch (err) {
-              console.error('Delete error:', err);
-              alert('Network error');
-            }
-          }
-        }}
-        style={{
-          marginTop: '16px',
-          padding: '10px 20px',
-          background: '#dc3545',
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          width: '100%'
-        }}
-      >
-        Delete my account
-      </button>
 
 
 
