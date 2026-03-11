@@ -33,6 +33,8 @@ function Sidebar() {
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [changeError, setChangeError] = useState('');
 
+  const [myChats, setMyChats] = useState([]);
+
 
   useEffect(() => {
     const handleChatsUpdate = () => {
@@ -42,6 +44,34 @@ function Sidebar() {
     window.addEventListener('chatsUpdated', handleChatsUpdate);
     return () => window.removeEventListener('chatsUpdated', handleChatsUpdate);
   }, []);
+
+
+
+  // Fetch My chats when logged in (on Sidebar load / token change)
+  useEffect(() => {
+    const fetchMyChats = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const res = await fetch('https://i-msgnet-backend-production.up.railway.app/api/users/my-chats', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setMyChats(data); // you need to add const [myChats, setMyChats] = useState([]); at top
+        } else {
+          console.warn('My chats fetch failed:', res.status);
+        }
+      } catch (err) {
+        console.error('My chats fetch error:', err);
+      }
+    };
+
+    fetchMyChats();
+  }, []); // runs once on mount
+
+
 
   useEffect(() => {
     if (editingChatId && editInputRef.current) {
@@ -238,6 +268,25 @@ function Sidebar() {
           );
         })}
       </ul>
+
+
+      <h3 style={{ marginTop: '20px' }}>My chats</h3>
+      <ul style={{ listStyle: 'none', padding: 0 }}>
+        {myChats.map(chat => (
+          <li
+            key={chat.id}
+            style={{
+              padding: '8px',
+              cursor: 'pointer',
+              background: location.pathname === `/chat/${chat.id}` ? '#e9ecef' : 'transparent'
+            }}
+            onClick={() => navigate(`/chat/${chat.id}`)}
+          >
+            {chat.name || chat.id.slice(0, 8) + '...'}
+          </li>
+        ))}
+      </ul>
+
 
 
       {isLoggedIn ? (
