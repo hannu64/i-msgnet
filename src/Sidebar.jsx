@@ -27,6 +27,13 @@ function Sidebar() {
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
+  const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [changeError, setChangeError] = useState('');
+
+
   useEffect(() => {
     const handleChatsUpdate = () => {
       const stored = JSON.parse(localStorage.getItem('chats')) || [];
@@ -259,6 +266,23 @@ function Sidebar() {
 
 
           <button
+            onClick={() => setShowPasswordChangeModal(true)}
+            style={{
+              marginTop: '16px',
+              padding: '10px 20px',
+              background: '#ffc107',
+              color: '#333',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              width: '100%'
+            }}
+          >
+            Change password
+          </button>
+
+
+          <button
             onClick={async () => {
               if (window.confirm('Delete account? This removes your username, saved chats and login forever. Anonymous mode will still work.')) {
                 try {
@@ -324,6 +348,116 @@ function Sidebar() {
 
 
 
+      {showPasswordChangeModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            padding: '24px',
+            borderRadius: '12px',
+            width: '90%',
+            maxWidth: '400px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.25)'
+          }}>
+            <h3>Change Password</h3>
+
+            <input
+              type="password"
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              placeholder="Old password"
+              style={{ width: '100%', padding: '10px', marginBottom: '12px', borderRadius: '6px' }}
+            />
+
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="New password (min 10 chars)"
+              style={{ width: '100%', padding: '10px', marginBottom: '12px', borderRadius: '6px' }}
+            />
+
+            <input
+              type="password"
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              placeholder="Confirm new password"
+              style={{ width: '100%', padding: '10px', marginBottom: '16px', borderRadius: '6px' }}
+            />
+
+            {changeError && <p style={{ color: '#dc3545', marginBottom: '16px' }}>{changeError}</p>}
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowPasswordChangeModal(false);
+                  setChangeError('');
+                  setOldPassword('');
+                  setNewPassword('');
+                  setConfirmNewPassword('');
+                }}
+                style={{ padding: '10px 20px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '6px' }}
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={async () => {
+                  if (!oldPassword || !newPassword || !confirmNewPassword) {
+                    setChangeError('All fields required');
+                    return;
+                  }
+                  if (newPassword.length < 10) {
+                    setChangeError('New password must be at least 10 characters');
+                    return;
+                  }
+                  if (newPassword !== confirmNewPassword) {
+                    setChangeError('New passwords do not match');
+                    return;
+                  }
+
+                  try {
+                    const token = localStorage.getItem('token');
+                    const res = await fetch('https://i-msgnet-backend-production.up.railway.app/api/users/change-password', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({ oldPassword, newPassword })
+                    });
+
+                    const data = await res.json();
+
+                    if (res.ok) {
+                      setShowPasswordChangeModal(false);
+                      setChangeError('');
+                      setOldPassword('');
+                      setNewPassword('');
+                      setConfirmNewPassword('');
+                      alert('Password changed successfully!');
+                    } else {
+                      setChangeError(data.error || 'Error');
+                    }
+                  } catch (err) {
+                    setChangeError('Network error');
+                  }
+                }}
+                style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '6px' }}
+              >
+                Change Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
 
 
