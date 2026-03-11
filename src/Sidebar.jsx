@@ -264,6 +264,7 @@ function Sidebar() {
             Logout
           </button>
 
+        <h3 style={{ color: '#ff0000' }} >Danger area:</h3>
 
           <button
             onClick={() => setShowPasswordChangeModal(true)}
@@ -278,7 +279,7 @@ function Sidebar() {
               width: '100%'
             }}
           >
-            Change password
+            CHANGE PASSWORD
           </button>
 
 
@@ -314,13 +315,14 @@ function Sidebar() {
               padding: '10px 20px',
               background: '#dc3545',
               color: 'white',
+              fontWeight: 'bold',
               border: 'none',
               borderRadius: '6px',
               cursor: 'pointer',
               width: '100%'
             }}
           >
-            Delete my account
+            DELETE MY ACCOUNT
           </button>
 
 
@@ -335,6 +337,7 @@ function Sidebar() {
             padding: '10px 20px',
             background: '#007bff',
             color: 'white',
+            fontWeight: 'bold',
             border: 'none',
             borderRadius: '6px',
             cursor: 'pointer',
