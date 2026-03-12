@@ -49,6 +49,7 @@ function Sidebar() {
 
   // Fetch My chats when logged in (on Sidebar load / token change)
   useEffect(() => {
+
     const fetchMyChats = async () => {
       const token = localStorage.getItem('token');
       if (!token) return;
@@ -59,10 +60,11 @@ function Sidebar() {
         });
         if (res.ok) {
           const data = await res.json();
-          console.log('My chats data:', data); // ← add this
-          setMyChats(data); // you need to add const [myChats, setMyChats] = useState([]); at top
-        } else {
-          console.warn('My chats fetch failed:', res.status);
+          setMyChats(data.map(chat => ({
+            id: chat.id,
+            name: chat.name || chat.id.slice(0, 8) + '...',
+            preview: chat.preview || 'No preview'
+          })));
         }
       } catch (err) {
         console.error('My chats fetch error:', err);
@@ -283,7 +285,8 @@ function Sidebar() {
             }}
             onClick={() => navigate(`/chat/${chat.id}`)}
           >
-            {chat.name || chat.id.slice(0, 8) + '...'}
+            {chat.name}
+            <div style={{ fontSize: '0.85em', color: '#666' }}>{chat.preview}</div>
           </li>
         ))}
       </ul>
