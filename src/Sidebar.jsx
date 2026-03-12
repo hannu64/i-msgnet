@@ -70,17 +70,6 @@ function Sidebar() {
 
   const [myChats, setMyChats] = useState([]);
 
-  const enriched = validChats.map(chat => {
-    const msgs = JSON.parse(localStorage.getItem(`messages_${chat.id}`)) || [];
-    let preview = 'No messages yet';
-    if (msgs.length > 0) {
-      const lastSender = msgs[msgs.length - 1].sender;
-      preview = lastSender === 'me' ? 'You sent a message' : 'Friend replied';
-    }
-    return { ...chat, preview };
-  });
-  setChats(enriched);
-
 
 
   useEffect(() => {
@@ -321,8 +310,8 @@ function Sidebar() {
                 {chat.preview || 'No messages yet'}
               </div>
 
-            </li>
-          );
+              </li>
+            );
         })}
       </ul>
 
