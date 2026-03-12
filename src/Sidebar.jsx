@@ -13,6 +13,41 @@ function Sidebar() {
   const [editNameInput, setEditNameInput] = useState('');
   const editInputRef = useRef(null);
 
+  const loadChats = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('chats')) || [];
+      const validChats = stored.filter(chat =>
+        chat && typeof chat === 'object' && chat.id && typeof chat.name === 'string'
+      );
+      if (validChats.length < stored.length) {
+        console.warn('Removed invalid chat entries');
+        localStorage.setItem('chats', JSON.stringify(validChats));
+      }
+
+      // Enrich with preview
+      const enriched = validChats.map(chat => {
+        const msgs = JSON.parse(localStorage.getItem(`messages_${chat.id}`)) || [];
+        let preview = 'No messages yet';
+        if (msgs.length > 0) {
+          const lastSender = msgs[msgs.length - 1].sender;
+          preview = lastSender === 'me' ? 'You sent a message' : 'Friend replied';
+        }
+        return { ...chat, preview };
+      });
+      setChats(enriched);
+    } catch (err) {
+      console.error('Failed to load chats:', err);
+      setChats([]);
+    }
+  };
+
+  useEffect(() => {
+    loadChats();
+    const handleUpdate = () => loadChats();
+    window.addEventListener('chatsUpdated', handleUpdate);
+    return () => window.removeEventListener('chatsUpdated', handleUpdate);
+  }, []);
+
   const isLoggedIn = !!localStorage.getItem('token');
   const currentUsername = localStorage.getItem('username') || '';
   const [showPassword, setShowPassword] = useState(false);
@@ -151,6 +186,10 @@ function Sidebar() {
     }
   };
 
+
+
+
+
   return (
     <div style={{ width: '250px', borderRight: '1px solid #ccc', padding: '10px', overflowY: 'auto' }}>
       <h2>Chats</h2>
@@ -172,18 +211,19 @@ function Sidebar() {
           const displayName = safeName.length > 28
             ? safeName.slice(0, 25) + '...'
             : safeName;
-          return (
-            <li
-              key={chat.id}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                marginBottom: '12px',
-                padding: '6px 8px',
-                borderRadius: '6px',
-                background: location.pathname === `/chat/${chat.id}` ? '#f0f0f0' : 'transparent'
-              }}
-            >
+
+            return (
+              <li
+                key={chat.id}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  marginBottom: '12px',
+                  padding: '6px 8px',
+                  borderRadius: '6px',
+                  background: window.location.pathname === `/chat/${chat.id}` ? '#f0f0f0' : 'transparent'
+                }}
+              >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 {isEditing ? (
                   <input
@@ -278,7 +318,7 @@ function Sidebar() {
                 overflow: 'hidden',
                 textOverflow: 'ellipsis'
               }}>
-                {chat.preview}
+                {chat.preview || 'No messages yet'}
               </div>
 
             </li>
