@@ -97,7 +97,7 @@ function Sidebar() {
         if (res.ok) {
           const data = await res.json();
 
-          console.log('My chats received from backend:', data); // ← add this
+        //  console.log('My chats received from backend:', data); // ← add this
 
           setMyChats(data.map(chat => ({
             id: chat.id,
