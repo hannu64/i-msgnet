@@ -286,7 +286,17 @@ function Sidebar() {
             onClick={() => navigate(`/chat/${chat.id}`)}
           >
             {chat.name}
-            <div style={{ fontSize: '0.85em', color: '#666' }}>{chat.preview}</div>
+            <div style={{
+              fontSize: '0.85em',
+              color: '#666',
+              marginTop: '4px',
+              paddingLeft: '4px',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              {chat.preview}
+            </div>
           </li>
         ))}
       </ul>
