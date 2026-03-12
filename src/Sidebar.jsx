@@ -256,6 +256,7 @@ function Sidebar() {
                 </div>
               </div>
               {/* Simple sender-based preview */}
+
               <div style={{
                 fontSize: '0.85em',
                 color: '#666',
@@ -267,6 +268,7 @@ function Sidebar() {
               }}>
                 {chat.preview}
               </div>
+
             </li>
           );
         })}
