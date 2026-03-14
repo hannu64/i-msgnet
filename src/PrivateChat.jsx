@@ -676,7 +676,8 @@ const pollMessages = async () => {
         <button
           onClick={() => setShowInviteModal(true)}
           style={{
-            marginTop: '12px',
+            marginTop: '16px',
+            marginLeft: '12px',
             padding: '8px 16px',
             background: '#28a745',
             color: 'white',
