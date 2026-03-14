@@ -676,8 +676,9 @@ const pollMessages = async () => {
         <button
           onClick={() => setShowInviteModal(true)}
           style={{
-            marginTop: '16px',
-            marginLeft: '12px',
+            marginTop: '16px', // ← more space above
+            marginLeft: '8px', // ← space from Clear key
+            marginRight: '12px', // ← space from Clear key
             padding: '8px 16px',
             background: '#28a745',
             color: 'white',
