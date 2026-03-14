@@ -861,12 +861,33 @@ const pollMessages = async () => {
                       body: JSON.stringify({ targetUsername: inviteUsername })
                     });
                     const data = await res.json();
+
+
                     if (res.ok) {
-                      alert(`Invite link: ${data.inviteLink}\nShare this with @${inviteUsername}`);
+                      alert(`Invite link generated!\n\n${data.inviteLink}\n\nShare this with @${inviteUsername}`);
+                      navigator.clipboard.writeText(data.inviteLink).then(() => {
+                        alert('Link copied to clipboard! Paste it to @${inviteUsername} (e.g. via Signal).');
+                      }).catch(() => {
+                        alert('Copy failed — please copy manually: ' + data.inviteLink);
+                      });
                       setShowInviteModal(false);
                     } else {
                       alert(data.error || 'Error');
                     }
+
+
+                  <p style={{ wordBreak: 'break-all', margin: '16px 0' }}>
+                    {data.inviteLink}
+                    <button
+                      onClick={() => navigator.clipboard.writeText(data.inviteLink)}
+                      style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                      📋 Copy
+                    </button>
+                  </p>
+
+
+
                   } catch (err) {
                     alert('Network error');
                   }
@@ -1056,16 +1077,16 @@ const pollMessages = async () => {
 {/* padding: '20px 40px', dustbins location */}
 {/* <div style={{ flex: 1, overflowY: 'auto', overflowX: 'visible', padding: '10px 0', display: 'flex', flexDirection: 'column', position: 'relative' }}> */}
 
-<div style={{
-  flex: 1,
-  overflowY: 'auto',
-  overflowX: 'visible',
-  padding: '0px 20px',  // ← more side padding
-  display: 'flex',
-  flexDirection: 'column',
-  width: '100%',
-  boxSizing: 'border-box'
-}}>
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'visible',
+          padding: '0px 20px',  // ← more side padding
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%',
+          boxSizing: 'border-box'
+        }}>
 
         {decryptedMessages.map((msg, idx) => (
           <div
