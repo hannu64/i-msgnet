@@ -688,7 +688,7 @@ const pollMessages = async () => {
             cursor: 'pointer'
           }}
         >
-          Invite username to a new chat
+          Invite username to new chat
         </button>
 
 
@@ -837,18 +837,20 @@ const pollMessages = async () => {
       maxWidth: '400px',
       boxShadow: '0 8px 32px rgba(0,0,0,0.25)'
     }}>
+
       {inviteLink ? (
         <>
           <h3>Invite link ready!</h3>
-          <p>Share this with @{inviteUsername}:</p>
+          <p>Share this link with @{inviteUsername} and open it yourself too (both need to use it to start the chat):</p>
           <p style={{ wordBreak: 'break-all', background: '#f8f9fa', padding: '12px', borderRadius: '6px', margin: '16px 0' }}>
             {inviteLink}
           </p>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+
             <button
               onClick={() => {
                 navigator.clipboard.writeText(inviteLink).then(() => {
-                  alert('Link copied to clipboard!');
+                  alert('Link copied to clipboard! Paste it to @' + inviteUsername + ' (keep it secure).');
                 }).catch(() => {
                   alert('Copy failed — please copy manually.');
                 });
@@ -857,6 +859,7 @@ const pollMessages = async () => {
             >
               Copy link
             </button>
+
             <button
               onClick={() => {
                 setShowInviteModal(false);
@@ -867,11 +870,12 @@ const pollMessages = async () => {
             >
               Close
             </button>
+
           </div>
         </>
       ) : (
         <>
-          <h3>Invite by username</h3>
+          <h3>Invite a username to new chat</h3>
           <input
             type="text"
             value={inviteUsername}
@@ -892,7 +896,7 @@ const pollMessages = async () => {
             <button
               onClick={async () => {
                 if (!inviteUsername || inviteUsername.length < 5) {
-                  alert('Enter a valid username');
+                  alert('Enter a valid username (min 5 chars)');
                   return;
                 }
                 try {
