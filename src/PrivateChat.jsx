@@ -817,7 +817,6 @@ const pollMessages = async () => {
 
 
 
-        // Add modal (after other modals)
         {showInviteModal && (
           <div style={{
             position: 'fixed',
