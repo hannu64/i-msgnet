@@ -881,6 +881,7 @@ const pollMessages = async () => {
             value={inviteUsername}
             onChange={(e) => setInviteUsername(e.target.value)}
             placeholder="@username"
+            autoFocus  // ← add this
             style={{ width: '100%', padding: '10px', marginBottom: '16px', borderRadius: '6px' }}
           />
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
