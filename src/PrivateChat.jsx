@@ -850,7 +850,7 @@ const pollMessages = async () => {
             <button
               onClick={() => {
                 navigator.clipboard.writeText(inviteLink).then(() => {
-                  alert('Link copied to clipboard! Paste it to @' + inviteUsername + ' (keep it secure).');
+                  alert('Link copied to clipboard! Paste it to @' + inviteUsername + ' (keep it secure) and you go to that address too.');
                 }).catch(() => {
                   alert('Copy failed — please copy manually.');
                 });
