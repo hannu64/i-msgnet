@@ -57,6 +57,9 @@ function PrivateChat() {
   const [isReloading, setIsReloading] = useState(false);
   const wasAtBottomRef = useRef(true); // track if user was at bottom before update
 
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteUsername, setInviteUsername] = useState('');
+
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
@@ -670,6 +673,22 @@ const pollMessages = async () => {
           </small>
         </div>
 
+        <button
+          onClick={() => setShowInviteModal(true)}
+          style={{
+            marginTop: '12px',
+            padding: '8px 16px',
+            background: '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer'
+          }}
+        >
+          Invite by @username
+        </button>
+
+
         {showPassphraseInput && (
           <div style={{
             marginTop: '16px',
@@ -790,6 +809,76 @@ const pollMessages = async () => {
                 }}
               >
                 Use this passphrase
+              </button>
+            </div>
+          </div>
+        )}
+
+
+
+
+        // Add modal (after other modals)
+        {showInviteModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              background: 'white',
+              padding: '24px',
+              borderRadius: '12px',
+              width: '90%',
+              maxWidth: '400px'
+            }}>
+              <h3>Invite by username</h3>
+              <input
+                type="text"
+                value={inviteUsername}
+                onChange={(e) => setInviteUsername(e.target.value)}
+                placeholder="@username"
+                style={{ width: '100%', padding: '10px', marginBottom: '16px', borderRadius: '6px' }}
+              />
+              <button
+                onClick={async () => {
+                  if (!inviteUsername || inviteUsername.length < 5) {
+                    alert('Enter a valid username');
+                    return;
+                  }
+                  try {
+                    const token = localStorage.getItem('token');
+                    const res = await fetch('https://i-msgnet-backend-production.up.railway.app/api/invite', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({ targetUsername: inviteUsername })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      alert(`Invite link: ${data.inviteLink}\nShare this with @${inviteUsername}`);
+                      setShowInviteModal(false);
+                    } else {
+                      alert(data.error || 'Error');
+                    }
+                  } catch (err) {
+                    alert('Network error');
+                  }
+                }}
+                style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '6px' }}
+              >
+                Generate Invite
+              </button>
+              <button
+                onClick={() => setShowInviteModal(false)}
+                style={{ marginLeft: '12px', padding: '10px 20px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '6px' }}
+              >
+                Cancel
               </button>
             </div>
           </div>
