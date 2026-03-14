@@ -678,8 +678,8 @@ const pollMessages = async () => {
           onClick={() => setShowInviteModal(true)}
           style={{
             marginTop: '16px', // ← more space above
-            marginLeft: '8px', // ← space from Clear key
-            marginRight: '12px', // ← space from Clear key
+            marginLeft: '8px', // ← space from other key
+            marginRight: '12px', // ← space from other key
             padding: '8px 16px',
             background: '#28a745',
             color: 'white',
@@ -688,7 +688,7 @@ const pollMessages = async () => {
             cursor: 'pointer'
           }}
         >
-          Invite by @username
+          Invite username to a new chat
         </button>
 
 
