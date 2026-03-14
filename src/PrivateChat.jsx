@@ -59,6 +59,7 @@ function PrivateChat() {
 
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteUsername, setInviteUsername] = useState('');
+  const [inviteLink, setInviteLink] = useState('');
 
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
@@ -818,93 +819,112 @@ const pollMessages = async () => {
 
 
 
-
-        {showInviteModal && (
-          <div style={{
-            position: 'fixed',
-            top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }}>
-            <div style={{
-              background: 'white',
-              padding: '24px',
-              borderRadius: '12px',
-              width: '90%',
-              maxWidth: '400px'
-            }}>
-              <h3>Invite by username</h3>
-              <input
-                type="text"
-                value={inviteUsername}
-                onChange={(e) => setInviteUsername(e.target.value)}
-                placeholder="@username"
-                style={{ width: '100%', padding: '10px', marginBottom: '16px', borderRadius: '6px' }}
-              />
-              <button
-                onClick={async () => {
-                  if (!inviteUsername || inviteUsername.length < 5) {
-                    alert('Enter a valid username');
-                    return;
-                  }
-                  try {
-                    const token = localStorage.getItem('token');
-                    const res = await fetch('https://i-msgnet-backend-production.up.railway.app/api/invite', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                      },
-                      body: JSON.stringify({ targetUsername: inviteUsername })
-                    });
-                    const data = await res.json();
-
-
-                    if (res.ok) {
-                      alert(`Invite link generated!\n\n${data.inviteLink}\n\nShare this with @${inviteUsername}`);
-                      navigator.clipboard.writeText(data.inviteLink).then(() => {
-                        alert('Link copied to clipboard! Paste it to @${inviteUsername} (e.g. via Signal).');
-                      }).catch(() => {
-                        alert('Copy failed — please copy manually: ' + data.inviteLink);
-                      });
-                      setShowInviteModal(false);
-                    } else {
-                      alert(data.error || 'Error');
-                    }
-
-
-                  <p style={{ wordBreak: 'break-all', margin: '16px 0' }}>
-                    {data.inviteLink}
-                    <button
-                      onClick={() => navigator.clipboard.writeText(data.inviteLink)}
-                      style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer' }}
-                    >
-                      📋 Copy
-                    </button>
-                  </p>
-
-
-
-                  } catch (err) {
-                    alert('Network error');
-                  }
-                }}
-                style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '6px' }}
-              >
-                Generate Invite
-              </button>
-              <button
-                onClick={() => setShowInviteModal(false)}
-                style={{ marginLeft: '12px', padding: '10px 20px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '6px' }}
-              >
-                Cancel
-              </button>
-            </div>
+{showInviteModal && (
+  <div style={{
+    position: 'fixed',
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000
+  }}>
+    <div style={{
+      background: 'white',
+      padding: '24px',
+      borderRadius: '12px',
+      width: '90%',
+      maxWidth: '400px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.25)'
+    }}>
+      {inviteLink ? (
+        <>
+          <h3>Invite link ready!</h3>
+          <p>Share this with @{inviteUsername}:</p>
+          <p style={{ wordBreak: 'break-all', background: '#f8f9fa', padding: '12px', borderRadius: '6px', margin: '16px 0' }}>
+            {inviteLink}
+          </p>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(inviteLink).then(() => {
+                  alert('Link copied to clipboard!');
+                }).catch(() => {
+                  alert('Copy failed — please copy manually.');
+                });
+              }}
+              style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+            >
+              Copy link
+            </button>
+            <button
+              onClick={() => {
+                setShowInviteModal(false);
+                setInviteLink('');
+                setInviteUsername('');
+              }}
+              style={{ padding: '10px 20px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+            >
+              Close
+            </button>
           </div>
-        )}
+        </>
+      ) : (
+        <>
+          <h3>Invite by username</h3>
+          <input
+            type="text"
+            value={inviteUsername}
+            onChange={(e) => setInviteUsername(e.target.value)}
+            placeholder="@username"
+            style={{ width: '100%', padding: '10px', marginBottom: '16px', borderRadius: '6px' }}
+          />
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => {
+                setShowInviteModal(false);
+                setInviteUsername('');
+              }}
+              style={{ padding: '10px 20px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '6px' }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={async () => {
+                if (!inviteUsername || inviteUsername.length < 5) {
+                  alert('Enter a valid username');
+                  return;
+                }
+                try {
+                  const token = localStorage.getItem('token');
+                  const res = await fetch('https://i-msgnet-backend-production.up.railway.app/api/invite', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ targetUsername: inviteUsername })
+                  });
+                  const data = await res.json();
+                  if (res.ok) {
+                    setInviteLink(data.inviteLink);
+                  } else {
+                    alert(data.error || 'Error');
+                  }
+                } catch (err) {
+                  alert('Network error');
+                }
+              }}
+              style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '6px' }}
+            >
+              Generate Invite
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  </div>
+)}
 
 
         {showReportModal && (
