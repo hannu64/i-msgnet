@@ -220,16 +220,15 @@ const pollMessages = async () => {
   try {
     const res = await fetch(`https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`);
     if (!res.ok) {
-      console.warn('Poll failed with status:', res.status);
-      return; // skip on error, don't overwrite
+      console.warn('Poll failed:', res.status);
+      return;
     }
     const remoteMsgs = await res.json();
 
-    // Reconcile: use backend as source of truth (add new, remove deleted)
+    // Reconcile: use backend as source of truth
     setMessages(prevMessages => {
       const remoteMap = new Map(remoteMsgs.map(m => [m.encrypted, m]));
       const updated = Array.from(remoteMap.values()).map(rm => {
-        // Keep local sender/timestamp if exists (for 'me' messages), else use remote
         const local = prevMessages.find(m => m.encrypted === rm.encrypted);
         return local || { encrypted: rm.encrypted, sender: 'them', timestamp: rm.timestamp || Date.now() };
       });
@@ -496,6 +495,7 @@ const pollMessages = async () => {
         { method: 'DELETE' }
       );
       if (res.ok) {
+        pollMessages(); // immediate sync
         setMessages(prev => prev.filter(m => m.encrypted !== encrypted));
         localStorage.setItem(`messages_${chatId}`, JSON.stringify(
           JSON.parse(localStorage.getItem(`messages_${chatId}`) || '[]').filter(m => m.encrypted !== encrypted)
