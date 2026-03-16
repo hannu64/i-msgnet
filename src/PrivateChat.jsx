@@ -1268,8 +1268,10 @@ const pollMessages = async () => {
         </button>
       </div>
     </div>
+
+    </ErrorBoundary>
   );
-  </ErrorBoundary>
+  
 }
 
 export default PrivateChat;
