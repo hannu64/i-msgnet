@@ -254,9 +254,13 @@ function PrivateChat() {
   // Polling (extracted as function)
 const pollMessages = async () => {
   try {
+    const location = window.location; // use window to get current URL
+    const queryParams = new URLSearchParams(location.search);
+    const currentInviteKey = queryParams.get('key');
+
     let url = `https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`;
-    if (inviteKey) {
-      url += `?key=${inviteKey}`;
+    if (currentInviteKey) {
+      url += `?key=${currentInviteKey}`;
     }
 
     const res = await fetch(url, {
@@ -267,26 +271,18 @@ const pollMessages = async () => {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      console.error('Poll failed:', res.status, errorData.error || 'Unknown error');
+      console.error('Poll failed:', res.status, errorData.error || 'Unknown');
       if (res.status === 403) {
-        alert('This invite is for a different user or invalid/expired.');
+        alert(errorData.error || 'Invalid invite link');
       }
       return;
     }
-    const remoteMsgs = await res.json();
 
-    setMessages(prevMessages => {
-      const remoteMap = new Map(remoteMsgs.map(m => [m.encrypted, m]));
-      const updated = Array.from(remoteMap.values()).map(rm => {
-        const local = prevMessages.find(m => m.encrypted === rm.encrypted);
-        return local || { encrypted: rm.encrypted, sender: 'them', timestamp: rm.timestamp || Date.now() };
-      });
-      localStorage.setItem(`messages_${chatId}`, JSON.stringify(updated));
-      console.log('Polling for chatId:', chatId, 'inviteKey:', inviteKey);
-      return updated;
-    });
+    const remoteMsgs = await res.json();
+    // ... reconcile code ...
   } catch (err) {
     console.error('Polling error:', err);
+    alert('Network error polling messages');
   }
 };
 
@@ -463,34 +459,46 @@ const pollMessages = async () => {
   };
 
 
-  const sendMessage = async () => {
-    // ... encrypt ...
-    try {
-      let url = 'https://i-msgnet-backend-production.up.railway.app/api/messages';
-      if (inviteKey) {
-        url += `?key=${inviteKey}`;
-      }
+const sendMessage = async () => {
+  if (!newMessage.trim() || !cryptoKey) {
+    alert('Cannot send: no message or no key');
+    return;
+  }
 
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-        },
-        body: JSON.stringify({ chatId, encrypted: base64, lifespanHours: msg.lifespanHours })
-      });
+  // ... encrypt code ...
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('Send failed:', res.status, errorData.error || 'Unknown error');
-        alert('Failed to send message. ' + (errorData.error || ''));
-        return;
-      }
-    } catch (err) {
-      console.error('Backend send failed:', err);
-      alert('Network error sending message');
+  try {
+    const location = window.location;
+    const queryParams = new URLSearchParams(location.search);
+    const currentInviteKey = queryParams.get('key');
+
+    let url = 'https://i-msgnet-backend-production.up.railway.app/api/messages';
+    if (currentInviteKey) {
+      url += `?key=${currentInviteKey}`;
     }
-  };
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+      },
+      body: JSON.stringify({ chatId, encrypted: base64, lifespanHours: msg.lifespanHours })
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      console.error('Send failed:', res.status, errorData.error || 'Unknown');
+      alert('Failed to send message. ' + (errorData.error || ''));
+      return;
+    }
+
+    setNewMessage('');
+  } catch (err) {
+    console.error('Backend send failed:', err);
+    alert('Network error sending message');
+  }
+};
 
 
   const simulateIncoming = async () => {
