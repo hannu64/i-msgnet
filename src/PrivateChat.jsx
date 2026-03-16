@@ -467,7 +467,7 @@ const sendMessage = async () => {
     return;
   }
 
-  // Encrypt message (your code)
+  // Encrypt message
   const encoder = new TextEncoder();
   const encodedMessage = encoder.encode(newMessage);
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -487,7 +487,7 @@ const sendMessage = async () => {
     if (inviteKey) {
       url += `?key=${inviteKey}`;
     }
-    console.log('Sending to:', url);
+    console.log('Sending to:', url); // debug
 
     const res = await fetch(url, {
       method: 'POST',
@@ -495,28 +495,27 @@ const sendMessage = async () => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
       },
-      body: JSON.stringify({ chatId, encrypted: base64, lifespanHours: msg.lifespanHours })
+      body: JSON.stringify({
+        chatId,
+        encrypted: base64,
+        lifespanHours: lifespanHours || 24  // use state or default to 24h
+      })
     });
 
-    console.log('Send status:', res.status);
+    console.log('Send status:', res.status); // debug
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
       console.error('Send failed:', res.status, errorData);
-      alert('Send failed: ' + (errorData.error || 'Unknown') + ' (status ' + res.status + ')');
+      alert('Failed to send message: ' + (errorData.error || 'Unknown') + ' (status ' + res.status + ')');
       return;
     }
 
     setNewMessage('');
-    pollMessages(); // refresh
-
+    pollMessages(); // refresh chat
   } catch (err) {
-    console.error('Send failed full:', err.name, err.message, err.stack);
-    if (err.message && err.message.includes('fetch')) {
-      alert('Send failed - likely CORS or network issue. Check console for details.');
-    } else {
-      alert('Network error sending message - ' + (err.message || 'Unknown error'));
-    }
+    console.error('Send error full:', err.name, err.message, err.stack);
+    alert('Send failed - check console. Error: ' + (err.message || 'Unknown'));
   }
 };
 
