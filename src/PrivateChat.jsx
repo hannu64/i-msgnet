@@ -100,6 +100,7 @@ function PrivateChat() {
     const stored = localStorage.getItem('blocked_chats');
     return stored ? JSON.parse(stored) : [];
   });
+  const [errorBanner, setErrorBanner] = useState('');
 
 
   console.log('States initialized - chatId:', chatId);
@@ -254,14 +255,7 @@ function PrivateChat() {
   // Polling (extracted as function)
 const pollMessages = async () => {
   try {
-    const location = window.location; // use window to get current URL
-    const queryParams = new URLSearchParams(location.search);
-    const currentInviteKey = queryParams.get('key');
-
-    let url = `https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`;
-    if (currentInviteKey) {
-      url += `?key=${currentInviteKey}`;
-    }
+    const url = `https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`; // no ?key=... for normal poll
 
     const res = await fetch(url, {
       headers: {
@@ -271,18 +265,15 @@ const pollMessages = async () => {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      console.error('Poll failed:', res.status, errorData.error || 'Unknown');
-      if (res.status === 403) {
-        alert(errorData.error || 'Invalid invite link');
-      }
+      console.error('Poll failed:', res.status, errorData);
+      setErrorBanner(errorData.error || 'Access denied or invalid invite link');
       return;
     }
 
     const remoteMsgs = await res.json();
-    // ... reconcile code ...
+    // ... reconcile ...
   } catch (err) {
     console.error('Polling error:', err);
-    alert('Network error polling messages');
   }
 };
 
@@ -468,14 +459,7 @@ const sendMessage = async () => {
   // ... encrypt code ...
 
   try {
-    const location = window.location;
-    const queryParams = new URLSearchParams(location.search);
-    const currentInviteKey = queryParams.get('key');
-
-    let url = 'https://i-msgnet-backend-production.up.railway.app/api/messages';
-    if (currentInviteKey) {
-      url += `?key=${currentInviteKey}`;
-    }
+    const url = 'https://i-msgnet-backend-production.up.railway.app/api/messages'; // no ?key=... for normal send
 
     const res = await fetch(url, {
       method: 'POST',
@@ -488,8 +472,8 @@ const sendMessage = async () => {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      console.error('Send failed:', res.status, errorData.error || 'Unknown');
-      alert('Failed to send message. ' + (errorData.error || ''));
+      console.error('Send failed:', res.status, errorData);
+      alert('Failed to send message: ' + (errorData.error || 'Unknown error'));
       return;
     }
 
@@ -566,6 +550,18 @@ const sendMessage = async () => {
   return (
 
   <ErrorBoundary>
+
+    {errorBanner && (
+    <div style={{ background: '#dc3545', color: 'white', padding: '12px', marginBottom: '16px', borderRadius: '6px' }}>
+      {errorBanner}
+      <button
+       onClick={() => setErrorBanner('')}
+       style={{ marginLeft: '16px', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
+      >
+      Close
+      </button>
+    </div>
+)}
 
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '20px', boxSizing: 'border-box' }}>
 
