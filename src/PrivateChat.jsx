@@ -507,10 +507,16 @@ const sendMessage = async () => {
     setNewMessage('');
     // Optional: pollMessages() to refresh immediately
     pollMessages();
+ 
   } catch (err) {
-    console.error('Send error full:', err);
-    alert('Network error sending message - check console');
+    console.error('Send failed full error:', err);
+    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      alert('Send failed - likely CORS or network issue. Check console.');
+    } else {
+      alert('Network error sending message');
+    }
   }
+
 };
 
 
