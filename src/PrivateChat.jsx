@@ -489,6 +489,13 @@ const sendMessage = async () => {
     }
     console.log('Sending to:', url); // debug
 
+    
+    console.log('Send headers:', {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+    });
+
+
     const res = await fetch(url, {
       method: 'POST',
       headers: {
