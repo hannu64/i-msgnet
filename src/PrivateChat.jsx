@@ -480,7 +480,15 @@ const sendMessage = async () => {
     setNewMessage('');
   } catch (err) {
     console.error('Backend send failed:', err);
-    alert('Network error sending message');
+    if (err.response) {
+      err.response.json().then(data => {
+        alert('Send failed: ' + (data.error || 'Unknown error') + ' (status ' + err.response.status + ')');
+      }).catch(() => {
+        alert('Send failed - network error');
+      });
+    } else {
+      alert('Network error sending message');
+    }
   }
 };
 
