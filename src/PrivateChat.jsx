@@ -503,10 +503,10 @@ const sendMessage = async () => {
     }
 
     setNewMessage('');
-  } catch (err) {
-    console.error('Backend send failed:', err);
-    alert('Network error sending message');
-  }
+    } catch (err) {
+      console.error('Backend send failed full error:', err);
+      alert('Send failed - check console for details. Error: ' + (err.message || 'Unknown'));
+    }
 };
 
 
