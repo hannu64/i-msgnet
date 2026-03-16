@@ -458,12 +458,13 @@ const pollMessages = async () => {
 
 const sendMessage = async () => {
   if (!newMessage.trim()) return;
+
   if (!cryptoKey) {
     alert('No encryption key set. Use demo mode or paste a shared key.');
     return;
   }
 
-  // Encrypt message (your existing code here - keep it)
+  // Encrypt message (your existing code - keep this part)
   const encoder = new TextEncoder();
   const encodedMessage = encoder.encode(newMessage);
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -483,7 +484,7 @@ const sendMessage = async () => {
     if (inviteKey) {
       url += `?key=${inviteKey}`;
     }
-    console.log('Sending message to URL:', url); // debug
+    console.log('Sending message to URL:', url); // debug: check if key is appended
 
     const res = await fetch(url, {
       method: 'POST',
@@ -491,7 +492,7 @@ const sendMessage = async () => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
       },
-      body: JSON.stringify({ chatId, encrypted: base64, lifespanHours: lifespanHours })
+      body: JSON.stringify({ chatId, encrypted: base64, lifespanHours: lifespanHours }) // fix: use lifespanHours from state or msg
     });
 
     if (!res.ok) {
