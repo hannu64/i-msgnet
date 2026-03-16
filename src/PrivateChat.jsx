@@ -61,6 +61,10 @@ function PrivateChat() {
   const [inviteUsername, setInviteUsername] = useState('');
   const [inviteLink, setInviteLink] = useState('');
 
+  const { search } = useLocation();
+  const queryParams = new URLSearchParams(search);
+  const inviteKey = queryParams.get('key');
+
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
@@ -181,36 +185,36 @@ function PrivateChat() {
   // Auto-scroll
 
 // Replace your current auto-scroll useEffect with this
-useEffect(() => {
-  if (!messagesEndRef.current) return;
+  useEffect(() => {
+    if (!messagesEndRef.current) return;
 
-  // Check if user is currently at bottom
-  const isAtBottom = 
-    messagesEndRef.current.getBoundingClientRect().bottom <= 
-    (window.innerHeight || document.documentElement.clientHeight) + 50; // small buffer
+    // Check if user is currently at bottom
+    const isAtBottom = 
+      messagesEndRef.current.getBoundingClientRect().bottom <= 
+      (window.innerHeight || document.documentElement.clientHeight) + 50; // small buffer
 
-  // Update ref for next render
-  wasAtBottomRef.current = isAtBottom;
+    // Update ref for next render
+    wasAtBottomRef.current = isAtBottom;
 
-  // Scroll conditions:
-  // 1. User was at bottom before this update → scroll to new message
-  // 2. New messages arrived → scroll (but only if wasAtBottom)
-  if (wasAtBottomRef.current) {
-    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-  }
-}, [decryptedMessages]); // trigger on decrypted change (new messages)
-
-useEffect(() => {
-  const checkScroll = () => {
-    if (messagesEndRef.current) {
-      const rect = messagesEndRef.current.getBoundingClientRect();
-      const isAtBottom = rect.bottom <= window.innerHeight + 50;
-      if (isAtBottom) setHasNewMessages(false);
+    // Scroll conditions:
+    // 1. User was at bottom before this update → scroll to new message
+    // 2. New messages arrived → scroll (but only if wasAtBottom)
+    if (wasAtBottomRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  };
-  window.addEventListener('scroll', checkScroll);
-  return () => window.removeEventListener('scroll', checkScroll);
-}, []);
+  }, [decryptedMessages]); // trigger on decrypted change (new messages)
+
+  useEffect(() => {
+    const checkScroll = () => {
+      if (messagesEndRef.current) {
+        const rect = messagesEndRef.current.getBoundingClientRect();
+        const isAtBottom = rect.bottom <= window.innerHeight + 50;
+        if (isAtBottom) setHasNewMessages(false);
+      }
+    };
+    window.addEventListener('scroll', checkScroll);
+    return () => window.removeEventListener('scroll', checkScroll);
+  }, []);
 
 
 
@@ -218,14 +222,24 @@ useEffect(() => {
   // Polling (extracted as function)
 const pollMessages = async () => {
   try {
-    const res = await fetch(`https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`);
+    let url = `https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`;
+    if (inviteKey) {
+      url += `?key=${inviteKey}`;
+    }
+
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+      }
+    });
+
     if (!res.ok) {
       console.warn('Poll failed:', res.status);
       return;
     }
+
     const remoteMsgs = await res.json();
 
-    // Reconcile: use backend as source of truth
     setMessages(prevMessages => {
       const remoteMap = new Map(remoteMsgs.map(m => [m.encrypted, m]));
       const updated = Array.from(remoteMap.values()).map(rm => {
@@ -411,43 +425,29 @@ const pollMessages = async () => {
     return 'Very strong ✓';
   };
 
+
   const sendMessage = async () => {
     if (!newMessage.trim() || !cryptoKey) return;
-    const encoder = new TextEncoder();
-    const data = encoder.encode(newMessage);
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, data);
-    const combined = new Uint8Array(iv.length + encrypted.byteLength);
-    combined.set(iv);
-    combined.set(new Uint8Array(encrypted), iv.length);
-    const base64 = btoa(String.fromCharCode(...combined));
-    const msg = { 
-      encrypted: base64, 
-      sender: 'me', 
-      timestamp: Date.now(),
-      lifespanHours: lifespanHours === 'null' ? null : parseInt(lifespanHours)
-    };
-    const updated = [...messages, msg];
-    setMessages(updated);
-    localStorage.setItem(`messages_${chatId}`, JSON.stringify(updated));
-    setNewMessage('');
+    // ... encrypt code ...
     try {
-      await fetch('https://i-msgnet-backend-production.up.railway.app/api/messages', {
+      let url = 'https://i-msgnet-backend-production.up.railway.app/api/messages';
+      if (inviteKey) {
+        url += `?key=${inviteKey}`;
+      }
+
+      await fetch(url, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`  // ← add this line
-         },
-        body: JSON.stringify({ 
-          chatId, 
-          encrypted: base64,
-          lifespanHours: msg.lifespanHours
-        })
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+        },
+        body: JSON.stringify({ chatId, encrypted: base64, lifespanHours: msg.lifespanHours })
       });
     } catch (err) {
       console.error('Backend send failed:', err);
     }
   };
+
 
   const simulateIncoming = async () => {
     if (!cryptoKey) {
