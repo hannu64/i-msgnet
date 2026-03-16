@@ -1,6 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 // import './styles.css';
+
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('PrivateChat error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <h1 style={{ color: 'red', textAlign: 'center', padding: '20px' }}>Something went wrong in chat view. Check console.</h1>;
+    }
+    return this.props.children;
+  }
+}
+
 
 // Generate random AES-256 key and export as base64
 const generateKey = async () => {
@@ -40,6 +64,8 @@ const importKey = async (base64Key) => {
 
 function PrivateChat() {
   const { chatId } = useParams();
+  console.log('PrivateChat component started rendering');
+
   const [messages, setMessages] = useState([]);
   const [decryptedMessages, setDecryptedMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -62,7 +88,8 @@ function PrivateChat() {
   const [inviteLink, setInviteLink] = useState('');
 
   const { search } = useLocation();
-  const queryParams = new URLSearchParams(search);
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
   const inviteKey = queryParams.get('key');
 
   const [showReportModal, setShowReportModal] = useState(false);
@@ -73,6 +100,11 @@ function PrivateChat() {
     const stored = localStorage.getItem('blocked_chats');
     return stored ? JSON.parse(stored) : [];
   });
+
+
+  console.log('States initialized - chatId:', chatId);
+  console.log('inviteKey from URL:', inviteKey);
+  console.log('token from localStorage:', localStorage.getItem('token'));
 
   // Improved timestamp formatting
   const formatMessageTime = (timestamp) => {
@@ -247,6 +279,7 @@ const pollMessages = async () => {
         return local || { encrypted: rm.encrypted, sender: 'them', timestamp: rm.timestamp || Date.now() };
       });
       localStorage.setItem(`messages_${chatId}`, JSON.stringify(updated));
+      console.log('Polling for chatId:', chatId, 'inviteKey:', inviteKey);
       return updated;
     });
   } catch (err) {
@@ -256,6 +289,7 @@ const pollMessages = async () => {
 
 
   useEffect(() => {
+    console.log('pollMessages useEffect triggered for chatId:', chatId);
     pollMessages();
     const interval = setInterval(pollMessages, 8000);
     return () => clearInterval(interval);
@@ -442,7 +476,9 @@ const pollMessages = async () => {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         },
         body: JSON.stringify({ chatId, encrypted: base64, lifespanHours: msg.lifespanHours })
+        
       });
+      console.log('Sending message for chatId:', chatId, 'token:', localStorage.getItem('token'));
     } catch (err) {
       console.error('Backend send failed:', err);
     }
@@ -512,8 +548,12 @@ const pollMessages = async () => {
   };
 
   return (
+
+  <ErrorBoundary>
+
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', padding: '20px', boxSizing: 'border-box' }}>
 
+    {console.log('Inside return - starting JSX')}
 
       <h2>Chat {chatId.slice(0, 8)}...</h2>
 
@@ -815,6 +855,7 @@ const pollMessages = async () => {
               </button>
             </div>
           </div>
+          
         )}
 
 
@@ -929,7 +970,9 @@ const pollMessages = async () => {
       )}
     </div>
   </div>
+  
 )}
+
 
 
         {showReportModal && (
@@ -1226,6 +1269,7 @@ const pollMessages = async () => {
       </div>
     </div>
   );
+  </ErrorBoundary>
 }
 
 export default PrivateChat;
