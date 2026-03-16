@@ -464,7 +464,7 @@ const sendMessage = async () => {
     return;
   }
 
-  // Encrypt message (your existing code - keep this part)
+  // Encrypt message (your code)
   const encoder = new TextEncoder();
   const encodedMessage = encoder.encode(newMessage);
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -484,7 +484,7 @@ const sendMessage = async () => {
     if (inviteKey) {
       url += `?key=${inviteKey}`;
     }
-    console.log('Sending message to URL:', url); // debug: check if key is appended
+    console.log('Sending to:', url); // debug
 
     const res = await fetch(url, {
       method: 'POST',
@@ -492,21 +492,25 @@ const sendMessage = async () => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
       },
-      body: JSON.stringify({ chatId, encrypted: base64, lifespanHours: lifespanHours }) // fix: use lifespanHours from state or msg
+      body: JSON.stringify({ chatId, encrypted: base64, lifespanHours: lifespanHours })
     });
+
+    console.log('Send status:', res.status); // debug
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
       console.error('Send failed:', res.status, errorData);
-      alert('Failed to send message: ' + (errorData.error || 'Unknown error') + ' (status ' + res.status + ')');
+      alert('Send failed: ' + (errorData.error || 'Unknown') + ' (status ' + res.status + ')');
       return;
     }
 
     setNewMessage('');
-    } catch (err) {
-      console.error('Backend send failed full error:', err);
-      alert('Send failed - check console for details. Error: ' + (err.message || 'Unknown'));
-    }
+    // Optional: pollMessages() to refresh immediately
+    pollMessages();
+  } catch (err) {
+    console.error('Send error full:', err);
+    alert('Network error sending message - check console');
+  }
 };
 
 
