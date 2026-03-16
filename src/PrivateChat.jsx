@@ -484,7 +484,7 @@ const sendMessage = async () => {
     if (inviteKey) {
       url += `?key=${inviteKey}`;
     }
-    console.log('Sending to:', url); // debug
+    console.log('Sending to:', url);
 
     const res = await fetch(url, {
       method: 'POST',
@@ -495,24 +495,20 @@ const sendMessage = async () => {
       body: JSON.stringify({ chatId, encrypted: base64, lifespanHours: lifespanHours })
     });
 
-    console.log('Send status:', res.status); // debug
+    console.log('Send response status:', res.status);
 
-
-
-    if (res.ok) {
-      setNewMessage('');
-      pollMessages(); // immediate refresh
-    } else {
+    if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
       console.error('Send failed:', res.status, errorData);
-      alert('Failed to send message: ' + (errorData.error || 'Unknown') + ' (status ' + res.status + ')');
+      alert('Send failed: ' + (errorData.error || 'Unknown') + ' (status ' + res.status + ')');
       return;
     }
 
- 
+    setNewMessage('');
+    pollMessages(); // refresh
   } catch (err) {
-    console.error('Send failed full:', err.name, err.message, err.stack);
-    alert('Send failed - check console. Error: ' + (err.message || 'Unknown'));
+    console.error('Send error full:', err.name, err.message, err.stack);
+    alert('Network error sending message - check console: ' + err.message);
   }
 
 };
