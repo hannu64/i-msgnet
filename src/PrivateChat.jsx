@@ -497,16 +497,18 @@ const sendMessage = async () => {
 
     console.log('Send status:', res.status); // debug
 
-    if (!res.ok) {
+
+
+    if (res.ok) {
+      setNewMessage('');
+      pollMessages(); // immediate refresh
+    } else {
       const errorData = await res.json().catch(() => ({}));
       console.error('Send failed:', res.status, errorData);
-      alert('Send failed: ' + (errorData.error || 'Unknown') + ' (status ' + res.status + ')');
+      alert('Failed to send message: ' + (errorData.error || 'Unknown') + ' (status ' + res.status + ')');
       return;
     }
 
-    setNewMessage('');
-    // Optional: pollMessages() to refresh immediately
-    pollMessages();
  
   } catch (err) {
     console.error('Send failed full:', err.name, err.message, err.stack);
