@@ -266,10 +266,13 @@ const pollMessages = async () => {
     });
 
     if (!res.ok) {
-      console.warn('Poll failed:', res.status);
+      const errorData = await res.json().catch(() => ({}));
+      console.error('Poll failed:', res.status, errorData.error || 'Unknown error');
+      if (res.status === 403) {
+        alert('This invite is for a different user or invalid/expired.');
+      }
       return;
     }
-
     const remoteMsgs = await res.json();
 
     setMessages(prevMessages => {
@@ -461,26 +464,31 @@ const pollMessages = async () => {
 
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !cryptoKey) return;
-    // ... encrypt code ...
+    // ... encrypt ...
     try {
       let url = 'https://i-msgnet-backend-production.up.railway.app/api/messages';
       if (inviteKey) {
         url += `?key=${inviteKey}`;
       }
 
-      await fetch(url, {
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         },
         body: JSON.stringify({ chatId, encrypted: base64, lifespanHours: msg.lifespanHours })
-        
       });
-      console.log('Sending message for chatId:', chatId, 'token:', localStorage.getItem('token'));
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Send failed:', res.status, errorData.error || 'Unknown error');
+        alert('Failed to send message. ' + (errorData.error || ''));
+        return;
+      }
     } catch (err) {
       console.error('Backend send failed:', err);
+      alert('Network error sending message');
     }
   };
 
