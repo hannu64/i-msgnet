@@ -497,12 +497,13 @@ const sendMessage = async () => {
 
     console.log('Send response status:', res.status);
 
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      console.error('Send failed:', res.status, errorData);
-      alert('Send failed: ' + (errorData.error || 'Unknown') + ' (status ' + res.status + ')');
-      return;
+   if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    if (res.status === 403 && !inviteKey) {
+      alert('Access denied: ' + (errorData.error || ''));
     }
+    return;
+  }
 
     setNewMessage('');
     pollMessages(); // refresh
