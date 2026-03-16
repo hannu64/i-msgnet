@@ -267,14 +267,17 @@ const pollMessages = async () => {
       }
     });
 
+
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      console.error('Poll failed:', res.status, errorData);
-      if (res.status === 403) {
+      if (inviteKey) {  // only show invite errors when in invite flow
         alert('Access denied: ' + (errorData.error || 'Invalid invite'));
+      } else {
+        console.warn('Normal poll failed:', res.status, errorData);
       }
       return;
     }
+
 
     const remoteMsgs = await res.json();
     // ... reconcile code ...
@@ -492,18 +495,17 @@ const sendMessage = async () => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
       },
-      body: JSON.stringify({ chatId, encrypted: base64, lifespanHours: lifespanHours })
+      body: JSON.stringify({ chatId, encrypted: base64, lifespanHours: msg.lifespanHours })
     });
 
-    console.log('Send response status:', res.status);
+    console.log('Send status:', res.status);
 
-   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    if (res.status === 403 && !inviteKey) {
-      alert('Access denied: ' + (errorData.error || ''));
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      console.error('Send failed:', res.status, errorData);
+      alert('Send failed: ' + (errorData.error || 'Unknown') + ' (status ' + res.status + ')');
+      return;
     }
-    return;
-  }
 
     setNewMessage('');
     pollMessages(); // refresh
