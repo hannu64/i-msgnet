@@ -255,7 +255,11 @@ function PrivateChat() {
   // Polling (extracted as function)
 const pollMessages = async () => {
   try {
-    const url = `https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`; // no ?key=... for normal poll
+    let url = `https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`;
+    if (inviteKey) {
+      url += `?key=${inviteKey}`;
+    }
+    console.log('Polling URL:', url); // ← add for debug
 
     const res = await fetch(url, {
       headers: {
@@ -266,12 +270,14 @@ const pollMessages = async () => {
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
       console.error('Poll failed:', res.status, errorData);
-      setErrorBanner(errorData.error || 'Access denied or invalid invite link');
+      if (res.status === 403) {
+        alert('Access denied: ' + (errorData.error || 'Invalid invite'));
+      }
       return;
     }
 
     const remoteMsgs = await res.json();
-    // ... reconcile ...
+    // ... reconcile code ...
   } catch (err) {
     console.error('Polling error:', err);
   }
@@ -451,15 +457,33 @@ const pollMessages = async () => {
 
 
 const sendMessage = async () => {
-  if (!newMessage.trim() || !cryptoKey) {
-    alert('Cannot send: no message or no key');
+  if (!newMessage.trim()) return;
+  if (!cryptoKey) {
+    alert('No encryption key set. Use demo mode or paste a shared key.');
     return;
   }
 
-  // ... encrypt code ...
+  // Encrypt message (your existing code here - keep it)
+  const encoder = new TextEncoder();
+  const encodedMessage = encoder.encode(newMessage);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encryptedBuffer = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    cryptoKey,
+    encodedMessage
+  );
+  const encryptedArray = new Uint8Array(encryptedBuffer);
+  const combined = new Uint8Array(iv.length + encryptedArray.length);
+  combined.set(iv);
+  combined.set(encryptedArray, iv.length);
+  const base64 = btoa(String.fromCharCode(...combined));
 
   try {
-    const url = 'https://i-msgnet-backend-production.up.railway.app/api/messages'; // no ?key=... for normal send
+    let url = 'https://i-msgnet-backend-production.up.railway.app/api/messages';
+    if (inviteKey) {
+      url += `?key=${inviteKey}`;
+    }
+    console.log('Sending message to URL:', url); // debug
 
     const res = await fetch(url, {
       method: 'POST',
@@ -467,28 +491,20 @@ const sendMessage = async () => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
       },
-      body: JSON.stringify({ chatId, encrypted: base64, lifespanHours: msg.lifespanHours })
+      body: JSON.stringify({ chatId, encrypted: base64, lifespanHours: lifespanHours })
     });
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
       console.error('Send failed:', res.status, errorData);
-      alert('Failed to send message: ' + (errorData.error || 'Unknown error'));
+      alert('Failed to send message: ' + (errorData.error || 'Unknown error') + ' (status ' + res.status + ')');
       return;
     }
 
     setNewMessage('');
   } catch (err) {
     console.error('Backend send failed:', err);
-    if (err.response) {
-      err.response.json().then(data => {
-        alert('Send failed: ' + (data.error || 'Unknown error') + ' (status ' + err.response.status + ')');
-      }).catch(() => {
-        alert('Send failed - network error');
-      });
-    } else {
-      alert('Network error sending message');
-    }
+    alert('Network error sending message');
   }
 };
 
