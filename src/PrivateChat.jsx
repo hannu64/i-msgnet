@@ -111,13 +111,20 @@ function PrivateChat() {
     const token = localStorage.getItem('token');
     if (token && !myUsername) {
       try {
+
+        if (messages.length > 0 && msg === messages[0]) {
+          console.log("Backend message fields:", Object.keys(msg));
+          console.log("Sender-related field value:", msg.sender_username || msg.username || msg.sender || '[none]');
+        }
+
         const payload = JSON.parse(atob(token.split('.')[1]));
-        setMyUsername(payload.username);   // most common place in JWT
+        setMyUsername(payload.username || payload.sub || payload.name || payload.user);
+        console.log("Detected my username:", payload.username || payload.sub);
       } catch (err) {
-        console.warn("Could not read username from token", err);
+        console.warn("Failed to parse username from token", err);
       }
     }
-  }, [myUsername]);
+  }, []);
 
 
   console.log('States initialized - chatId:', chatId);
@@ -191,18 +198,7 @@ function PrivateChat() {
   }, [chatId]);
 
 
-  // Get my username from token (so we can mark my messages correctly)
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token && !myUsername) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setMyUsername(payload.username || payload.sub || payload.userId);
-      } catch (e) {
-        console.log("Could not read username from token");
-      }
-    }
-  }, [myUsername]);
+
 
 
   // Block filter: redirect if current chat is blocked
@@ -248,6 +244,21 @@ function PrivateChat() {
             const data = combined.slice(12);
             const buffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, data);
             const text = new TextDecoder().decode(buffer);
+
+
+            // ────────────────────────────────────────────────
+            // NEW: Mark if this is my message (for right/green bubble)
+            const senderName = msg.sender_username || msg.username || msg.from_username || msg.sender || '';
+            const isFromMe = senderName === myUsername || senderName.toLowerCase() === myUsername?.toLowerCase();
+
+            return {
+              ...msg,
+              text,
+              timestamp: msg.created_at || msg.timestamp || Date.now(),
+              sender: isFromMe ? 'me' : 'them',    // ← this is what your render expects!
+            };
+            // ────────────────────────────────────────────────
+
 
             // NEW: decide if this message is from me (uses the 'sender' field your backend already sends)
             const isFromMe = 
