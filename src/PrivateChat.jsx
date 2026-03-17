@@ -234,6 +234,7 @@ function PrivateChat() {
           }
           try {
 
+            console.log("Raw msg from backend:", msg);
             console.log("Decrypt attempt - msg ID:", msg.id || msg._id || 'unknown');
             console.log("Encrypted data length:", msg.encrypted?.length || 'missing');
             console.log("cryptoKey exists?", !!cryptoKey);
@@ -249,10 +250,13 @@ function PrivateChat() {
             // ────────────────────────────────────────────────
             // NEW: Mark if this is my message (for right/green bubble)
             const senderName = msg.sender_username || msg.username || msg.from_username || msg.sender || '';
-            const isFromMe = senderName === myUsername || senderName.toLowerCase() === myUsername?.toLowerCase();
+
+//            const isFromMe = senderName === myUsername || senderName.toLowerCase() === myUsername?.toLowerCase();
+            const isFromMe = true;  // force all as 'me' — for test only
+            // or const isFromMe = false; // force all as 'them'
 
             console.log("isFromMe:", isFromMe, "myUsername:", myUsername, "senderName:", senderName);
-            
+
             return {
               ...msg,
               text,
