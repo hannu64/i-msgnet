@@ -253,39 +253,39 @@ function PrivateChat() {
 
 
   // Polling (extracted as function)
-const pollMessages = async () => {
-  try {
-    let url = `https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`;
-    if (inviteKey) {
-      url += `?key=${inviteKey}`;
-    }
-    console.log('Polling URL:', url); // ← add for debug
-
-    const res = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+  const pollMessages = async () => {
+    try {
+      let url = `https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`;
+      if (inviteKey) {
+        url += `?key=${inviteKey}`;
       }
-    });
+      console.log('Polling URL:', url); // ← add for debug
+
+      const res = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+        }
+      });
 
 
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-//      if (inviteKey && res.status === 403) {
-//        alert('Access denied: ' + (errorData.error || 'Invalid or expired invite link'));
-//      } else {
-        console.warn('Normal poll failed:', res.status, errorData);
-        // no alert for normal polling errors (e.g. 404, 500)
-//      }
-      return;
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        if (inviteKey && res.status === 403) {
+          alert('Access denied: ' + (errorData.error || 'Invalid or expired invite link'));
+        } else {
+          console.warn('Normal poll failed:', res.status, errorData);
+          // no alert for normal polling errors (e.g. 404, 500)
+        }
+        return;
+      }
+
+
+      const remoteMsgs = await res.json();
+      // ... reconcile code ...
+    } catch (err) {
+      console.error('Polling error:', err);
     }
-
-
-    const remoteMsgs = await res.json();
-    // ... reconcile code ...
-  } catch (err) {
-    console.error('Polling error:', err);
-  }
-};
+  };
 
 
   useEffect(() => {
@@ -308,6 +308,19 @@ const pollMessages = async () => {
     return () => window.removeEventListener('chatSelected', handleChatSelected);
   }, [chatId, messages]); // re-attach on chatId change
 
+
+
+  useEffect(() => {
+    if (!inviteKey) return;
+
+    // Clear inviteKey after join (or on chat change)
+    const timer = setTimeout(() => {
+      // Optional: clear inviteKey state if you have it
+      // setInviteKey(null);
+    }, 5000); // 5s delay or on unmount
+
+    return () => clearTimeout(timer);
+  }, [inviteKey]);
 
 
 
