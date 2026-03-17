@@ -270,10 +270,11 @@ const pollMessages = async () => {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      if (inviteKey) {  // only show invite errors when in invite flow
-        alert('Access denied: ' + (errorData.error || 'Invalid invite'));
+      if (inviteKey && res.status === 403) {
+        alert('Access denied: ' + (errorData.error || 'Invalid or expired invite link'));
       } else {
         console.warn('Normal poll failed:', res.status, errorData);
+        // no alert for normal polling errors (e.g. 404, 500)
       }
       return;
     }
@@ -467,7 +468,7 @@ const sendMessage = async () => {
     return;
   }
 
-  // Encrypt message
+  // Encrypt message (your code)
   const encoder = new TextEncoder();
   const encodedMessage = encoder.encode(newMessage);
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -487,14 +488,7 @@ const sendMessage = async () => {
     if (inviteKey) {
       url += `?key=${inviteKey}`;
     }
-    console.log('Sending to:', url); // debug
-
-    
-    console.log('Send headers:', {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-    });
-
+    console.log('Sending message to:', url); // debug
 
     const res = await fetch(url, {
       method: 'POST',
@@ -505,16 +499,16 @@ const sendMessage = async () => {
       body: JSON.stringify({
         chatId,
         encrypted: base64,
-        lifespanHours: lifespanHours || 24  // use state or default to 24h
+        lifespanHours: lifespanHours || 24 // use state or default 24h
       })
     });
 
-    console.log('Send status:', res.status); // debug
+    console.log('Send response status:', res.status); // debug
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
       console.error('Send failed:', res.status, errorData);
-      alert('Failed to send message: ' + (errorData.error || 'Unknown') + ' (status ' + res.status + ')');
+      alert('Failed to send message: ' + (errorData.error || 'Unknown error') + ' (status ' + res.status + ')');
       return;
     }
 
@@ -522,7 +516,7 @@ const sendMessage = async () => {
     pollMessages(); // refresh chat
   } catch (err) {
     console.error('Send error full:', err.name, err.message, err.stack);
-    alert('Send failed - check console. Error: ' + (err.message || 'Unknown'));
+    alert('Network error sending message - check console: ' + (err.message || 'Unknown'));
   }
 };
 
