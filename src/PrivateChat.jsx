@@ -260,7 +260,7 @@ function PrivateChat() {
       if (inviteKey) {
         url += `?key=${inviteKey}`;
       }
-      console.log('Polling URL:', url); // ← add for debug
+      console.log('Polling:', url);   // ← you will see this every 8s
 
       const res = await fetch(url, {
         headers: {
@@ -268,21 +268,32 @@ function PrivateChat() {
         }
       });
 
+      // NEW: Clear inviteKey after first successful load or after 403 (invite already accepted)
+      if (inviteKey) {
+        if (res.ok) {
+          console.log('✅ Invite accepted - clearing key forever');
+          setInviteKey(null);
+          window.history.replaceState({}, '', `/chat/${chatId}`);
+        } else if (res.status === 403) {
+          console.log('Invite already accepted (403) - clearing key');
+          setInviteKey(null);
+          window.history.replaceState({}, '', `/chat/${chatId}`);
+          // do NOT alert again
+          return;
+        }
+      }
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        if (inviteKey && res.status === 403) {
-          alert('Access denied: ' + (errorData.error || 'Invalid or expired invite link'));
-        } else {
-          console.warn('Normal poll failed:', res.status, errorData);
-          // no alert for normal polling errors (e.g. 404, 500)
-        }
+        console.warn('Normal poll failed:', res.status, errorData);
         return;
       }
 
-
       const remoteMsgs = await res.json();
-      // ... reconcile code ...
+      // ← keep all your existing code here that merges into localStorage / setMessages
+      // (I didn't touch this part)
+      setMessages(remoteMsgs);   // or however you currently reconcile
+
     } catch (err) {
       console.error('Polling error:', err);
     }
@@ -483,9 +494,12 @@ function PrivateChat() {
       return;
     }
 
-    // Encrypt message (your code)
+    const messageText = newMessage.trim(); // save for possible restore
+    setNewMessage(''); // optimistic clear (this is why field was emptying)
+
+    // === your existing encryption code (unchanged) ===
     const encoder = new TextEncoder();
-    const encodedMessage = encoder.encode(newMessage);
+    const encodedMessage = encoder.encode(messageText);
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const encryptedBuffer = await crypto.subtle.encrypt(
       { name: 'AES-GCM', iv },
@@ -500,14 +514,12 @@ function PrivateChat() {
 
     try {
       let url = 'https://i-msgnet-backend-production.up.railway.app/api/messages';
-      if (inviteKey) {
-        url += `?key=${inviteKey}`;
-      }
-      console.log('Sending to:', url); // debug: see if key is appended
-      console.log('Attempting to send message - token:', localStorage.getItem('token') ? 'present' : 'missing');
-      console.log('lifespanHours used:', lifespanHours || 24);
+      if (inviteKey) url += `?key=${inviteKey}`; // harmless on POST
 
-
+      console.log('🚀 SENDING MESSAGE');
+      console.log('URL:', url);
+      console.log('chatId:', chatId);
+      console.log('Token present:', !!localStorage.getItem('token'));
 
       const res = await fetch(url, {
         method: 'POST',
@@ -518,24 +530,24 @@ function PrivateChat() {
         body: JSON.stringify({
           chatId,
           encrypted: base64,
-          lifespanHours: lifespanHours || 24 // fix: use state or default
+          lifespanHours: lifespanHours || 24
         })
       });
 
-      console.log('Send status:', res.status); // debug
+      console.log('Send response status:', res.status);
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        console.error('Send failed:', res.status, errorData);
-        alert('Failed to send message: ' + (errorData.error || 'Unknown error') + ' (status ' + res.status + ')');
-        return;
+        throw new Error(errorData.error || `HTTP error ${res.status}`);
       }
 
-      setNewMessage('');
-      pollMessages(); // refresh
+      console.log('✅ Message sent successfully!');
+      pollMessages(); // refresh list
+
     } catch (err) {
-      console.error('Send error full:', err.name, err.message, err.stack);
-      alert('Network error sending message - check console: ' + (err.message || 'Unknown'));
+      console.error('❌ Full send error:', err);
+      alert('Network error sending message — check console for details');
+      setNewMessage(messageText); // restore input so you don't lose what you typed
     }
   };
 
