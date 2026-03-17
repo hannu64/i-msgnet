@@ -251,6 +251,8 @@ function PrivateChat() {
             const senderName = msg.sender_username || msg.username || msg.from_username || msg.sender || '';
             const isFromMe = senderName === myUsername || senderName.toLowerCase() === myUsername?.toLowerCase();
 
+            console.log("isFromMe:", isFromMe, "myUsername:", myUsername, "senderName:", senderName);
+            
             return {
               ...msg,
               text,
@@ -260,17 +262,7 @@ function PrivateChat() {
             // ────────────────────────────────────────────────
 
 
-            // NEW: decide if this message is from me (uses the 'sender' field your backend already sends)
-            const isFromMe = 
-              msg.sender === myUsername || 
-              msg.sender_username === myUsername || 
-              msg.username === myUsername;
 
-            return { 
-              ...msg, 
-              text, 
-              sender: isFromMe ? 'me' : 'them' 
-            };
           } catch (err) {
             console.error("Decrypt error for msg:", err);
             return { 
