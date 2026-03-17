@@ -68,6 +68,7 @@ function PrivateChat() {
   console.log('PrivateChat component started rendering');
 
   const [messages, setMessages] = useState([]);
+  const [myUsername, setMyUsername] = useState(null);
   const [decryptedMessages, setDecryptedMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [cryptoKey, setCryptoKey] = useState(null);
@@ -104,7 +105,7 @@ function PrivateChat() {
   });
   const [errorBanner, setErrorBanner] = useState('');
 
-  const [myUsername, setMyUsername] = useState(null);
+
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -190,6 +191,20 @@ function PrivateChat() {
   }, [chatId]);
 
 
+  // Get my username from token (so we can mark my messages correctly)
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token && !myUsername) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setMyUsername(payload.username || payload.sub || payload.userId);
+      } catch (e) {
+        console.log("Could not read username from token");
+      }
+    }
+  }, [myUsername]);
+
+
   // Block filter: redirect if current chat is blocked
   useEffect(() => {
     const storedBlocked = localStorage.getItem('blocked_chats');
@@ -206,48 +221,60 @@ function PrivateChat() {
 
 
   // Decrypt
+  // Decrypt messages + mark my own messages for correct left/right bubbles
   useEffect(() => {
     if (!cryptoKey) return;
+
     const decryptAll = async () => {
-      
+
+      if (messages.length > 0 && !cryptoKey) {
+        console.warn("No cryptoKey available — decryption will fail for all messages");
+      }
+
       const decrypted = await Promise.all(
         messages.map(async (msg) => {
+          if (!msg.encrypted) {
+            return { ...msg, text: '[No content]', sender: 'them' };
+          }
           try {
-            const decryptedText = await decryptMessage(msg.encrypted);   // ← keep your original decrypt call
 
-            // NEW: decide if this message is mine
-            const isFromMe =
-              msg.sender_username === myUsername ||
-              msg.username === myUsername ||
-              msg.from_username === myUsername ||
-              String(msg.user_id) === String(myUsername); // fallback if id is used
+            console.log("Decrypt attempt - msg ID:", msg.id || msg._id || 'unknown');
+            console.log("Encrypted data length:", msg.encrypted?.length || 'missing');
+            console.log("cryptoKey exists?", !!cryptoKey);
+            console.log("cryptoKey type:", cryptoKey ? cryptoKey.constructor.name : 'null');
 
-            return {
-              ...msg,
-              text: decryptedText,
-              timestamp: msg.created_at,
-              sender: isFromMe ? 'me' : 'them',          // ← this line makes the bubbles go left/right
+            const combined = Uint8Array.from(atob(msg.encrypted), c => c.charCodeAt(0));
+            const iv = combined.slice(0, 12);
+            const data = combined.slice(12);
+            const buffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, data);
+            const text = new TextDecoder().decode(buffer);
+
+            // NEW: decide if this message is from me (uses the 'sender' field your backend already sends)
+            const isFromMe = 
+              msg.sender === myUsername || 
+              msg.sender_username === myUsername || 
+              msg.username === myUsername;
+
+            return { 
+              ...msg, 
+              text, 
+              sender: isFromMe ? 'me' : 'them' 
             };
           } catch (err) {
-            console.error("Decrypt failed", err);
-            return {
-              ...msg,
-              text: "[decryption error]",
-              timestamp: msg.created_at,
-              sender: 'them', // safe default
+            console.error("Decrypt error for msg:", err);
+            return { 
+              ...msg, 
+              text: '[Decryption failed]', 
+              sender: 'them' 
             };
           }
         })
       );
       setDecryptedMessages(decrypted);
-
-      console.log("My username =", myUsername);
-      if (decrypted.length > 0) console.log("First message after fix →", decrypted[0]);
-
+      console.log(`✅ Decrypted ${decrypted.length} messages. My username =`, myUsername);
     };
-
     decryptAll();
-  }, [messages, cryptoKey]);
+  }, [messages, cryptoKey, myUsername]);
 
 
 
@@ -526,6 +553,12 @@ function PrivateChat() {
 
 
   const sendMessage = async () => {
+
+    console.log("Send button clicked!");
+    console.log("newMessage:", newMessage);
+    console.log("cryptoKey exists?", !!cryptoKey);
+    console.log("chatId:", chatId);
+
     if (!newMessage.trim()) return;
 
     if (!cryptoKey) {
