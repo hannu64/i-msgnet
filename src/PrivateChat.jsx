@@ -270,12 +270,12 @@ const pollMessages = async () => {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      if (inviteKey && res.status === 403) {
-        alert('Access denied: ' + (errorData.error || 'Invalid or expired invite link'));
-      } else {
+//      if (inviteKey && res.status === 403) {
+//        alert('Access denied: ' + (errorData.error || 'Invalid or expired invite link'));
+//      } else {
         console.warn('Normal poll failed:', res.status, errorData);
         // no alert for normal polling errors (e.g. 404, 500)
-      }
+//      }
       return;
     }
 
@@ -515,9 +515,14 @@ const pollMessages = async () => {
 
       setNewMessage('');
       pollMessages(); // refresh
+
     } catch (err) {
-      console.error('Send error full:', err.name, err.message, err.stack);
-      alert('Network error sending message - check console: ' + (err.message || 'Unknown'));
+      console.error('Send failed full:', err.name, err.message, err.stack);
+      if (err.message.includes('Failed to fetch')) {
+        alert('Send failed - likely CORS or network issue. Check console for details.');
+      } else {
+        alert('Network error sending message - ' + (err.message || 'Unknown'));
+      }
     }
   };
 
