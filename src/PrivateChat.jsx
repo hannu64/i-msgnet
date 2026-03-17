@@ -88,9 +88,10 @@ function PrivateChat() {
   const [inviteLink, setInviteLink] = useState('');
 
   const { search } = useLocation();
+
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const inviteKey = queryParams.get('key');
+  const [inviteKey, setInviteKey] = useState(queryParams.get('key'));
 
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
@@ -311,15 +312,16 @@ function PrivateChat() {
 
 
   useEffect(() => {
-    if (!inviteKey) return;
+    if (inviteKey) {
+      console.log('Invite key active:', inviteKey);
+      // Clear inviteKey after 5 seconds (or on unmount/chat change)
+      const timer = setTimeout(() => {
+        setInviteKey(null);
+        console.log('Cleared inviteKey after join');
+      }, 5000);
 
-    // Clear inviteKey after join (or on chat change)
-    const timer = setTimeout(() => {
-      // Optional: clear inviteKey state if you have it
-      // setInviteKey(null);
-    }, 5000); // 5s delay or on unmount
-
-    return () => clearTimeout(timer);
+      return () => clearTimeout(timer);
+    }
   }, [inviteKey]);
 
 
@@ -501,8 +503,11 @@ function PrivateChat() {
       if (inviteKey) {
         url += `?key=${inviteKey}`;
       }
-      console.log('Sending message to URL:', url);
-      console.log('Token sent:', localStorage.getItem('token') ? 'yes' : 'no');
+      console.log('Sending to:', url); // debug: see if key is appended
+      console.log('Attempting to send message - token:', localStorage.getItem('token') ? 'present' : 'missing');
+      console.log('lifespanHours used:', lifespanHours || 24);
+
+
 
       const res = await fetch(url, {
         method: 'POST',
@@ -513,11 +518,11 @@ function PrivateChat() {
         body: JSON.stringify({
           chatId,
           encrypted: base64,
-          lifespanHours: lifespanHours || 24
+          lifespanHours: lifespanHours || 24 // fix: use state or default
         })
       });
 
-      console.log('Send response status:', res.status);
+      console.log('Send status:', res.status); // debug
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
@@ -528,14 +533,9 @@ function PrivateChat() {
 
       setNewMessage('');
       pollMessages(); // refresh
-
     } catch (err) {
-      console.error('Send failed full:', err.name, err.message, err.stack);
-      if (err.message.includes('Failed to fetch')) {
-        alert('Send failed - likely CORS or network issue. Check console for details.');
-      } else {
-        alert('Network error sending message - ' + (err.message || 'Unknown'));
-      }
+      console.error('Send error full:', err.name, err.message, err.stack);
+      alert('Network error sending message - check console: ' + (err.message || 'Unknown'));
     }
   };
 
