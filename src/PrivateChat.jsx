@@ -26,6 +26,7 @@ class ErrorBoundary extends React.Component {
 }
 
 
+
 // Generate random AES-256 key and export as base64
 const generateKey = async () => {
   const key = await crypto.subtle.generateKey(
@@ -102,6 +103,20 @@ function PrivateChat() {
     return stored ? JSON.parse(stored) : [];
   });
   const [errorBanner, setErrorBanner] = useState('');
+
+  const [myUsername, setMyUsername] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token && !myUsername) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setMyUsername(payload.username);   // most common place in JWT
+      } catch (err) {
+        console.warn("Could not read username from token", err);
+      }
+    }
+  }, [myUsername]);
 
 
   console.log('States initialized - chatId:', chatId);
@@ -194,22 +209,43 @@ function PrivateChat() {
   useEffect(() => {
     if (!cryptoKey) return;
     const decryptAll = async () => {
+      
       const decrypted = await Promise.all(
         messages.map(async (msg) => {
-          if (!msg.encrypted) return { ...msg, text: '[No content]', status: 'ok' };
           try {
-            const combined = Uint8Array.from(atob(msg.encrypted), c => c.charCodeAt(0));
-            const iv = combined.slice(0, 12);
-            const data = combined.slice(12);
-            const buffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, data);
-            return { ...msg, text: new TextDecoder().decode(buffer), status: 'ok' };
+            const decryptedText = await decryptMessage(msg.encrypted);   // ← keep your original decrypt call
+
+            // NEW: decide if this message is mine
+            const isFromMe =
+              msg.sender_username === myUsername ||
+              msg.username === myUsername ||
+              msg.from_username === myUsername ||
+              String(msg.user_id) === String(myUsername); // fallback if id is used
+
+            return {
+              ...msg,
+              text: decryptedText,
+              timestamp: msg.created_at,
+              sender: isFromMe ? 'me' : 'them',          // ← this line makes the bubbles go left/right
+            };
           } catch (err) {
-            return { ...msg, text: '[Decryption failed]', status: 'error' };
+            console.error("Decrypt failed", err);
+            return {
+              ...msg,
+              text: "[decryption error]",
+              timestamp: msg.created_at,
+              sender: 'them', // safe default
+            };
           }
         })
       );
       setDecryptedMessages(decrypted);
+
+      console.log("My username =", myUsername);
+      if (decrypted.length > 0) console.log("First message after fix →", decrypted[0]);
+
     };
+
     decryptAll();
   }, [messages, cryptoKey]);
 
@@ -254,13 +290,14 @@ function PrivateChat() {
 
 
   // Polling (extracted as function)
-  const pollMessages = async () => {
+  const pollMessages = async (isManual = false) => {  // optional param to distinguish manual refresh
     try {
       let url = `https://i-msgnet-backend-production.up.railway.app/api/messages/${chatId}`;
-      if (inviteKey) {
+      const hasInviteParam = !!inviteKey;
+
+      if (hasInviteParam) {
         url += `?key=${inviteKey}`;
       }
-      console.log('Polling:', url);   // ← you will see this every 8s
 
       const res = await fetch(url, {
         headers: {
@@ -268,34 +305,36 @@ function PrivateChat() {
         }
       });
 
-      // NEW: Clear inviteKey after first successful load or after 403 (invite already accepted)
-      if (inviteKey) {
-        if (res.ok) {
-          console.log('✅ Invite accepted - clearing key forever');
+      // Handle invite key cleanup on BOTH success AND "already used" error
+      if (hasInviteParam) {
+        if (res.ok || res.status === 403) {   // ← key change here
+          console.log(res.ok ? 'Invite accepted (200)' : 'Invite already used (403) — clearing key');
           setInviteKey(null);
-          window.history.replaceState({}, '', `/chat/${chatId}`);
-        } else if (res.status === 403) {
-          console.log('Invite already accepted (403) - clearing key');
-          setInviteKey(null);
-          window.history.replaceState({}, '', `/chat/${chatId}`);
-          // do NOT alert again
-          return;
+          // Clean URL without reload
+          window.history.replaceState({}, '', `/chat/${chatId}`);  // or window.location.pathname if needed
         }
       }
 
       if (!res.ok) {
+        if (res.status === 403 && !hasInviteParam) {
+          // Normal 403 without key → probably not participant anymore, handle differently if needed
+          console.warn('403 without invite key');
+        }
         const errorData = await res.json().catch(() => ({}));
-        console.warn('Normal poll failed:', res.status, errorData);
+        if (!isManual) return;  // silent fail on auto-poll
+        alert('Failed to load messages: ' + (errorData.error || res.status));
         return;
       }
 
       const remoteMsgs = await res.json();
-      // ← keep all your existing code here that merges into localStorage / setMessages
-      // (I didn't touch this part)
-      setMessages(remoteMsgs);   // or however you currently reconcile
+      // Your existing merge logic here, e.g.:
+      // setMessages(prev => [...prev, ...remoteMsgs.filter(r => !prev.some(p => p.id === r.id))]);
+      // or just setMessages(remoteMsgs) if you want server-authoritative
+      setMessages(remoteMsgs);
 
     } catch (err) {
-      console.error('Polling error:', err);
+      console.error('Poll error:', err);
+      if (isManual) alert('Network error loading messages');
     }
   };
 
