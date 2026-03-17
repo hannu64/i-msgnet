@@ -119,6 +119,11 @@ function PrivateChat() {
 
         const payload = JSON.parse(atob(token.split('.')[1]));
         setMyUsername(payload.username || payload.sub || payload.name || payload.user);
+
+        if (!myUsername && payload) {
+          setMyUsername(payload.sub || payload.name || payload.userId || 'fallback-user');
+        }
+
         console.log("Detected my username:", payload.username || payload.sub);
       } catch (err) {
         console.warn("Failed to parse username from token", err);
@@ -249,10 +254,38 @@ function PrivateChat() {
 
             // ────────────────────────────────────────────────
             // NEW: Mark if this is my message (for right/green bubble)
-            const senderName = msg.sender_username || msg.username || msg.from_username || msg.sender || '';
+            
+            //  const senderName = msg.sender_username || msg.username || msg.from_username || msg.sender || ''; // original sender detection
+            const possibleSenderFields = [
+              msg.sender_username,
+              msg.username,
+              msg.from_username,
+              msg.sender,
+              msg.from_user,
+              msg.author,
+              msg.user,
+              msg.from,
+            ];
 
-//            const isFromMe = senderName === myUsername || senderName.toLowerCase() === myUsername?.toLowerCase();
-            const isFromMe = true;  // force all as 'me' — for test only
+            const senderName = possibleSenderFields.find(val => val && typeof val === 'string') || '';
+
+            const isFromMe = 
+              senderName === myUsername ||
+              senderName.toLowerCase() === myUsername?.toLowerCase() ||
+              senderName.includes(myUsername) ||  // partial match fallback
+              msg.user_id === myUserId ||         // if you have numeric ID state
+              msg.from_user_id === myUserId;
+
+            console.log("Sender detection:", { 
+              senderName, 
+              myUsername, 
+              isFromMe, 
+              rawMsgSenderFields: possibleSenderFields 
+            });
+
+
+//            const isFromMe = senderName === myUsername || senderName.toLowerCase() === myUsername?.toLowerCase(); // original isFromMe
+//            const isFromMe = true;  // force all as 'me' — for test only
             // or const isFromMe = false; // force all as 'them'
 
             console.log("isFromMe:", isFromMe, "myUsername:", myUsername, "senderName:", senderName);
