@@ -223,99 +223,67 @@ function PrivateChat() {
 
   // Decrypt
   // Decrypt messages + mark my own messages for correct left/right bubbles
-  useEffect(() => {
-    if (!cryptoKey) return;
+    // Decrypt messages + mark my own messages for right/green bubbles
+    useEffect(() => {
+      if (!cryptoKey || messages.length === 0) return;
 
-    const decryptAll = async () => {
+      const decryptAll = async () => {
+        const decrypted = await Promise.all(
+          messages.map(async (msg) => {
+            let text = "[Decryption failed]";
+            let isFromMe = false;
 
-      if (messages.length > 0 && !cryptoKey) {
-        console.warn("No cryptoKey available — decryption will fail for all messages");
-      }
+            try {
+              // Inline decryption (this is the exact working version)
+              const combined = Uint8Array.from(atob(msg.encrypted), c => c.charCodeAt(0));
+              const iv = combined.slice(0, 12);
+              const data = combined.slice(12);
 
-      const decrypted = await Promise.all(
-        messages.map(async (msg) => {
-          if (!msg.encrypted) {
-            return { ...msg, text: '[No content]', sender: 'them' };
-          }
-          try {
+              const buffer = await crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv },
+                cryptoKey,
+                data
+              );
 
-            console.log("Raw msg from backend:", msg);
-            console.log("Decrypt attempt - msg ID:", msg.id || msg._id || 'unknown');
-            console.log("Encrypted data length:", msg.encrypted?.length || 'missing');
-            console.log("cryptoKey exists?", !!cryptoKey);
-            console.log("cryptoKey type:", cryptoKey ? cryptoKey.constructor.name : 'null');
+              text = new TextDecoder().decode(buffer);
 
-            const combined = Uint8Array.from(atob(msg.encrypted), c => c.charCodeAt(0));
-            const iv = combined.slice(0, 12);
-            const data = combined.slice(12);
-            const buffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, data);
-            const text = new TextDecoder().decode(buffer);
+              // Sender detection for bubbles (this is the important part)
+              const senderName = String(
+                msg.sender_username || 
+                msg.username || 
+                msg.from_username || 
+                msg.sender || 
+                msg.from_user || 
+                ''
+              );
 
+              isFromMe = senderName.toLowerCase() === (myUsername || '').toLowerCase();
 
-            // ────────────────────────────────────────────────
-            // NEW: Mark if this is my message (for right/green bubble)
-            
-            //  const senderName = msg.sender_username || msg.username || msg.from_username || msg.sender || ''; // original sender detection
-            const possibleSenderFields = [
-              msg.sender_username,
-              msg.username,
-              msg.from_username,
-              msg.sender,
-              msg.from_user,
-              msg.author,
-              msg.user,
-              msg.from,
-            ];
+              // This log will tell us exactly why it matches or not
+              console.log("Sender detection →", { 
+                msgId: msg.id, 
+                senderName, 
+                myUsername, 
+                isFromMe 
+              });
 
-            const senderName = possibleSenderFields.find(val => val && typeof val === 'string') || '';
+            } catch (err) {
+              console.error("Decrypt failed for msg", msg.id || "unknown", err.message);
+            }
 
-            const isFromMe = 
-              senderName === myUsername ||
-              senderName.toLowerCase() === myUsername?.toLowerCase() ||
-              senderName.includes(myUsername) ||  // partial match fallback
-              msg.user_id === myUserId ||         // if you have numeric ID state
-              msg.from_user_id === myUserId;
-
-            console.log("Sender detection:", { 
-              senderName, 
-              myUsername, 
-              isFromMe, 
-              rawMsgSenderFields: possibleSenderFields 
-            });
-
-
-//            const isFromMe = senderName === myUsername || senderName.toLowerCase() === myUsername?.toLowerCase(); // original isFromMe
-//            const isFromMe = true;  // force all as 'me' — for test only
-            // or const isFromMe = false; // force all as 'them'
-
-            console.log("isFromMe:", isFromMe, "myUsername:", myUsername, "senderName:", senderName);
-
-            return {
-              ...msg,
-              text,
-              timestamp: msg.created_at || msg.timestamp || Date.now(),
-              sender: isFromMe ? 'me' : 'them',    // ← this is what your render expects!
-            };
-            // ────────────────────────────────────────────────
-
-
-
-          } catch (err) {
-            console.error("Decrypt error for msg:", err);
             return { 
               ...msg, 
-              text: '[Decryption failed]', 
-              sender: 'them' 
+              text, 
+              sender: isFromMe ? 'me' : 'them' 
             };
-          }
-        })
-      );
-      setDecryptedMessages(decrypted);
-      console.log(`✅ Decrypted ${decrypted.length} messages. My username =`, myUsername);
-    };
-    decryptAll();
-  }, [messages, cryptoKey, myUsername]);
+          })
+        );
 
+        setDecryptedMessages(decrypted);
+      };
+
+      decryptAll();
+    }, [messages, cryptoKey, myUsername]);
 
 
 
