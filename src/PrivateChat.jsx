@@ -460,65 +460,66 @@ const pollMessages = async () => {
   };
 
 
-const sendMessage = async () => {
-  if (!newMessage.trim()) return;
+  const sendMessage = async () => {
+    if (!newMessage.trim()) return;
 
-  if (!cryptoKey) {
-    alert('No encryption key set. Use demo mode or paste a shared key.');
-    return;
-  }
-
-  // Encrypt message (your code)
-  const encoder = new TextEncoder();
-  const encodedMessage = encoder.encode(newMessage);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encryptedBuffer = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    cryptoKey,
-    encodedMessage
-  );
-  const encryptedArray = new Uint8Array(encryptedBuffer);
-  const combined = new Uint8Array(iv.length + encryptedArray.length);
-  combined.set(iv);
-  combined.set(encryptedArray, iv.length);
-  const base64 = btoa(String.fromCharCode(...combined));
-
-  try {
-    let url = 'https://i-msgnet-backend-production.up.railway.app/api/messages';
-    if (inviteKey) {
-      url += `?key=${inviteKey}`;
-    }
-    console.log('Sending message to:', url); // debug
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-      },
-      body: JSON.stringify({
-        chatId,
-        encrypted: base64,
-        lifespanHours: lifespanHours || 24 // use state or default 24h
-      })
-    });
-
-    console.log('Send response status:', res.status); // debug
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      console.error('Send failed:', res.status, errorData);
-      alert('Failed to send message: ' + (errorData.error || 'Unknown error') + ' (status ' + res.status + ')');
+    if (!cryptoKey) {
+      alert('No encryption key set. Use demo mode or paste a shared key.');
       return;
     }
 
-    setNewMessage('');
-    pollMessages(); // refresh chat
-  } catch (err) {
-    console.error('Send error full:', err.name, err.message, err.stack);
-    alert('Network error sending message - check console: ' + (err.message || 'Unknown'));
-  }
-};
+    // Encrypt message (your code)
+    const encoder = new TextEncoder();
+    const encodedMessage = encoder.encode(newMessage);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encryptedBuffer = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      cryptoKey,
+      encodedMessage
+    );
+    const encryptedArray = new Uint8Array(encryptedBuffer);
+    const combined = new Uint8Array(iv.length + encryptedArray.length);
+    combined.set(iv);
+    combined.set(encryptedArray, iv.length);
+    const base64 = btoa(String.fromCharCode(...combined));
+
+    try {
+      let url = 'https://i-msgnet-backend-production.up.railway.app/api/messages';
+      if (inviteKey) {
+        url += `?key=${inviteKey}`;
+      }
+      console.log('Sending message to URL:', url);
+      console.log('Token sent:', localStorage.getItem('token') ? 'yes' : 'no');
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+        },
+        body: JSON.stringify({
+          chatId,
+          encrypted: base64,
+          lifespanHours: lifespanHours || 24
+        })
+      });
+
+      console.log('Send response status:', res.status);
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Send failed:', res.status, errorData);
+        alert('Failed to send message: ' + (errorData.error || 'Unknown error') + ' (status ' + res.status + ')');
+        return;
+      }
+
+      setNewMessage('');
+      pollMessages(); // refresh
+    } catch (err) {
+      console.error('Send error full:', err.name, err.message, err.stack);
+      alert('Network error sending message - check console: ' + (err.message || 'Unknown'));
+    }
+  };
 
 
   const simulateIncoming = async () => {
