@@ -1533,7 +1533,6 @@ function PrivateChat() {
 
 </React.Fragment>
 
-
   );
   
 }
