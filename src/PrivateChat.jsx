@@ -271,11 +271,14 @@ function PrivateChat() {
               console.error("Decrypt failed for msg", msg.id || "unknown", err.message);
             }
 
-            return { 
-              ...msg, 
-              text, 
-              sender: isFromMe ? 'me' : 'them' 
+
+            return {
+              ...msg,
+              text: decryptedText,
+              sender: msg.sender || 'them'   // preserve 'me' from optimistic, default incoming to 'them' 18.03. 02:41 
             };
+
+
           })
         );
 
@@ -600,6 +603,25 @@ function PrivateChat() {
       console.log('URL:', url);
       console.log('chatId:', chatId);
       console.log('Token present:', !!localStorage.getItem('token'));
+
+
+
+      // Optimistic update — show your message on right/green immediately 18.03. 02:39
+      const optimisticMsg = {
+        id: `local-${Date.now()}`,
+        encrypted: base64,
+        created_at: new Date().toISOString(),
+        timestamp: Date.now(),
+        sender: 'me',                      // ← this is the magic line that was missing
+        text: newMessage.trim()            // plain text for display
+      };
+
+      setMessages(prev => [...prev, optimisticMsg]);
+
+      // If you have separate decryptedMessages state:
+      setDecryptedMessages(prev => [...prev, optimisticMsg]);
+
+
 
       const res = await fetch(url, {
         method: 'POST',
@@ -1321,11 +1343,11 @@ function PrivateChat() {
             className="message-bubble"
             style={{
               alignSelf: msg.sender === 'me' ? 'flex-end' : 'flex-start',
+              background: msg.sender === 'me' ? '#dcf8c6' : '#e5e5ea',  // green for me, light for them
               maxWidth: '70%',
               margin: '16px 0',
               padding: '12px 20px',
               borderRadius: '18px',
-              background: msg.sender === 'me' ? '#dcf8c6' : '#e3f2fd',
               boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
               wordBreak: 'break-word',
               position: 'relative',
