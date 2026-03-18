@@ -616,6 +616,8 @@ function PrivateChat() {
         text: newMessage.trim()            // plain text for display
       };
 
+      console.log("Optimistic message added with sender:", optimisticMsg.sender);
+
       setMessages(prev => [...prev, optimisticMsg]);
 
       // If you have separate decryptedMessages state:
