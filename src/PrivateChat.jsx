@@ -236,7 +236,7 @@ function PrivateChat() {
   // Decrypt messages + mark my own messages for correct left/right bubbles
     // Decrypt messages + mark my own messages for right/green bubbles
     useEffect(() => {
-      if (!cryptoKey || messages.length === 0) return;
+      if (!cryptoKey || messages.length === 0) { alert('cryptKey or message.length missing'); return; }
 
       const decryptAll = async () => {
 
@@ -309,7 +309,7 @@ function PrivateChat() {
 
 // Replace your current auto-scroll useEffect with this
   useEffect(() => {
-    if (!messagesEndRef.current) return;
+    if (!messagesEndRef.current) { alert('messagesEndRef.current missing'); return; } 
 
     // Check if user is currently at bottom
     const isAtBottom = 
@@ -374,7 +374,7 @@ function PrivateChat() {
           console.warn('403 without invite key');
         }
         const errorData = await res.json().catch(() => ({}));
-        if (!isManual) return;  // silent fail on auto-poll
+        if (!isManual) { alert('isManual not there'); return; }  // silent fail on auto-poll
         alert('Failed to load messages: ' + (errorData.error || res.status));
         return;
       }
@@ -430,7 +430,8 @@ function PrivateChat() {
 
 
   const copyKey = async () => {
-    if (!cryptoKey) return;
+    // if (!cryptoKey) return;
+    if (!cryptoKey) { alert('cryptoKey missing'); return; }
     const raw = await crypto.subtle.exportKey('raw', cryptoKey);
     const base64 = btoa(String.fromCharCode(...new Uint8Array(raw)));
     await navigator.clipboard.writeText(base64);
@@ -579,82 +580,70 @@ function PrivateChat() {
 
 
   const sendMessage = async () => {
+    console.log("sendMessage called");
 
-    console.log("Send button clicked!");
-    console.log("newMessage:", newMessage);
-    console.log("cryptoKey exists?", !!cryptoKey);
-    console.log("chatId:", chatId);
-
-    if (!newMessage.trim()) return;
-
-    if (!cryptoKey) {
-      alert('No encryption key set. Use demo mode or paste a shared key.');
+    if (!newMessage.trim()) {
+      console.log("Blocked: empty message");
       return;
     }
 
-    const messageText = newMessage.trim(); // save for possible restore
-    setNewMessage(''); // optimistic clear (this is why field was emptying)
+    if (!cryptoKey) {
+      console.log("Blocked: no cryptoKey");
+      alert("No encryption key set – cannot send");
+      return;
+    }
 
-    // === your existing encryption code (unchanged) ===
-    const encoder = new TextEncoder();
-    const encodedMessage = encoder.encode(messageText);
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encryptedBuffer = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv },
-      cryptoKey,
-      encodedMessage
-    );
-    const encryptedArray = new Uint8Array(encryptedBuffer);
-    const combined = new Uint8Array(iv.length + encryptedArray.length);
-    combined.set(iv);
-    combined.set(encryptedArray, iv.length);
-    const base64 = btoa(String.fromCharCode(...combined));
+    console.log("Starting encryption...");
+
+    const messageText = newMessage.trim();
+    setNewMessage(''); // clear input
+
+    let base64;
+    try {
+      const encoder = new TextEncoder();
+      const encodedMessage = encoder.encode(messageText);
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encryptedBuffer = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        cryptoKey,
+        encodedMessage
+      );
+      const encryptedArray = new Uint8Array(encryptedBuffer);
+      const combined = new Uint8Array(iv.length + encryptedArray.length);
+      combined.set(iv);
+      combined.set(encryptedArray, iv.length);
+      base64 = btoa(String.fromCharCode(...combined));
+      console.log("Encryption successful, base64 length:", base64.length);
+    } catch (err) {
+      console.error("Encryption failed:", err);
+      alert("Encryption error – cannot send");
+      setNewMessage(messageText);
+      return;
+    }
+
+    // Optimistic update
+    const optimisticMsg = {
+      id: `local-${Date.now()}`,
+      chatId,
+      encrypted: base64,
+      created_at: new Date().toISOString(),
+      timestamp: Date.now(),
+      sender: 'me',
+      text: messageText
+    };
+
+    console.log("Adding optimistic message:", optimisticMsg);
+
+    setMessages(prev => [...prev, optimisticMsg]);
+    setDecryptedMessages(prev => [...prev, optimisticMsg]); // yes – keep this line if you use decryptedMessages state
+
+    localStorage.setItem(`messages_${chatId}`, JSON.stringify([...messages, optimisticMsg]));
+
+    console.log("Starting POST fetch...");
 
     try {
-      let url = 'https://i-msgnet-backend-production.up.railway.app/api/messages';
-      if (inviteKey) url += `?key=${inviteKey}`; // harmless on POST
-
-      console.log('🚀 SENDING MESSAGE');
-      console.log('URL:', url);
-      console.log('chatId:', chatId);
-      console.log('Token present:', !!localStorage.getItem('token'));
-
-
-
-      // Optimistic update — show your message on right/green immediately 18.03. 02:39
-      const optimisticMsg = {
-        id: `local-${Date.now()}`,
-        chatId,                               // ← add this!
-        encrypted: base64,
-        created_at: new Date().toISOString(),
-        timestamp: Date.now(),
-        sender: 'me',                      // ← this is the magic line that was missing
-        text: newMessage.trim()            // plain text for display
-      };
-
-
-      console.log("Optimistic message added with sender:", optimisticMsg.sender);
-
-      setMessages(prev => [...prev, optimisticMsg]);
-
-      // If you have separate decryptedMessages state:
-      setDecryptedMessages(prev => [...prev, optimisticMsg]);
-
-      // Optional: save to localStorage per chat (so survives reload)
-      localStorage.setItem(`messages_${chatId}`, JSON.stringify([...messages, optimisticMsg]));
-
-
-      console.log("Preparing to send message:", {
-        chatId,
-        messageText: newMessage.trim(),
-        tokenExists: !!localStorage.getItem('token'),
-        inviteKey: inviteKey || 'none'
-      });
-
-// ... encryption code ...
-
-console.log("Executing POST to:", 'https://i-msgnet-backend-production.up.railway.app/api/messages');
-
+      const url = 'https://i-msgnet-backend-production.up.railway.app/api/messages';
+      console.log("POST URL:", url);
 
       const res = await fetch(url, {
         method: 'POST',
@@ -669,29 +658,29 @@ console.log("Executing POST to:", 'https://i-msgnet-backend-production.up.railwa
         })
       });
 
-      console.log("POST response status:", res.status, "ok?", res.ok);
+      console.log("POST response:", res.status, res.ok ? 'OK' : 'NOT OK');
 
       if (!res.ok) {
-        const errorText = await res.text().catch(() => 'No error text');
-        console.error("Send failed:", res.status, errorText);
-        alert(`Send failed: ${res.status} - ${errorText}`);
-        throw new Error(`HTTP ${res.status}`);
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Send error from server:", res.status, errorData);
+        alert(`Send failed: ${res.status} - ${errorData.error || 'Unknown'}`);
+        throw new Error('Send failed');
       }
 
-      console.log('✅ Message sent successfully!');
-      pollMessages(); // refresh list
+      console.log("Send succeeded!");
+      pollMessages(); // refresh
 
     } catch (err) {
-      console.error('❌ Full send error:', err);
-      alert('Network error sending message — check console for details');
-      setNewMessage(messageText); // restore input so you don't lose what you typed
+      console.error("Full send error:", err.message, err.stack);
+      alert("Network error sending – check console");
+      setNewMessage(messageText); // restore
     }
   };
 
 
   const simulateIncoming = async () => {
     if (!cryptoKey) {
-      alert('No key loaded yet');
+      alert('No cryptoKey loaded yet');
       return;
     }
     const fakeTexts = [
