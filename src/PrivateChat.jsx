@@ -66,7 +66,9 @@ const importKey = async (base64Key) => {
 function PrivateChat() {
   const { chatId } = useParams();
   console.log('PrivateChat component started rendering');
+
   const [messages, setMessages] = useState([]);
+
   const [myUsername, setMyUsername] = useState(null);
   const [decryptedMessages, setDecryptedMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
