@@ -784,7 +784,7 @@ function PrivateChat() {
 
   return (
 
-  <ErrorBoundary>
+<React.Fragment>
 
     {errorBanner && (
     <div style={{ background: '#dc3545', color: 'white', padding: '12px', marginBottom: '16px', borderRadius: '6px' }}>
@@ -1310,6 +1310,11 @@ function PrivateChat() {
         )}
 
 
+<button onClick={() => alert("Test click works!")}>
+  Test Click
+</button>
+
+
 
         <button onClick={simulateIncoming} disabled={!cryptoKey} style={{ marginTop: '12px', padding: '8px 16px', background: '#28a745', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
           Simulate incoming message (test decrypt)
@@ -1513,7 +1518,7 @@ function PrivateChat() {
         />
         <button
           type="button"
-          onClick={sendMessage}
+          onClick={() => console.log("BUTTON CLICK DETECTED - handler is firing!")}
           style={{ marginLeft: '10px', padding: '12px 24px', background: '#25D366', color: 'white', border: 'none', borderRadius: '20px', cursor: 'pointer' }}
         >
           Send It
@@ -1521,7 +1526,10 @@ function PrivateChat() {
       </div>
     </div>
 
-    </ErrorBoundary>
+
+</React.Fragment>
+
+
   );
   
 }
