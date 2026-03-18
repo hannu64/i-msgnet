@@ -204,7 +204,18 @@ function PrivateChat() {
 
 
 
-
+  useEffect(() => {
+    const saved = localStorage.getItem(`messages_${chatId}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setMessages(parsed);
+        // Optionally decrypt them if needed
+      } catch (e) {
+        console.error("Failed to load local messages", e);
+      }
+    }
+  }, [chatId]);
 
   // Block filter: redirect if current chat is blocked
   useEffect(() => {
@@ -228,8 +239,12 @@ function PrivateChat() {
       if (!cryptoKey || messages.length === 0) return;
 
       const decryptAll = async () => {
+
+
         const decrypted = await Promise.all(
-          messages.map(async (msg) => {
+          messages
+          .filter(msg => msg.chatId === chatId)  // ← only current chat
+          .map(async (msg) => {
             let text = "[Decryption failed]";
             let isFromMe = false;
 
@@ -274,7 +289,7 @@ function PrivateChat() {
 
             return {
               ...msg,
-              text: decryptedText,
+              text: decrypted || '[decryption failed]',
               sender: msg.sender || 'them'   // preserve 'me' from optimistic, default incoming to 'them' 18.03. 02:41 
             };
 
@@ -609,12 +624,14 @@ function PrivateChat() {
       // Optimistic update — show your message on right/green immediately 18.03. 02:39
       const optimisticMsg = {
         id: `local-${Date.now()}`,
+        chatId,                               // ← add this!
         encrypted: base64,
         created_at: new Date().toISOString(),
         timestamp: Date.now(),
         sender: 'me',                      // ← this is the magic line that was missing
         text: newMessage.trim()            // plain text for display
       };
+
 
       console.log("Optimistic message added with sender:", optimisticMsg.sender);
 
@@ -623,6 +640,20 @@ function PrivateChat() {
       // If you have separate decryptedMessages state:
       setDecryptedMessages(prev => [...prev, optimisticMsg]);
 
+      // Optional: save to localStorage per chat (so survives reload)
+      localStorage.setItem(`messages_${chatId}`, JSON.stringify([...messages, optimisticMsg]));
+
+
+      console.log("Preparing to send message:", {
+        chatId,
+        messageText: newMessage.trim(),
+        tokenExists: !!localStorage.getItem('token'),
+        inviteKey: inviteKey || 'none'
+      });
+
+// ... encryption code ...
+
+console.log("Executing POST to:", 'https://i-msgnet-backend-production.up.railway.app/api/messages');
 
 
       const res = await fetch(url, {
@@ -638,11 +669,13 @@ function PrivateChat() {
         })
       });
 
-      console.log('Send response status:', res.status);
+      console.log("POST response status:", res.status, "ok?", res.ok);
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP error ${res.status}`);
+        const errorText = await res.text().catch(() => 'No error text');
+        console.error("Send failed:", res.status, errorText);
+        alert(`Send failed: ${res.status} - ${errorText}`);
+        throw new Error(`HTTP ${res.status}`);
       }
 
       console.log('✅ Message sent successfully!');
