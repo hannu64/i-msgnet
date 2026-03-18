@@ -1518,8 +1518,8 @@ function PrivateChat() {
         />
         <button
           type="button"
-          onClick={() => console.log("BUTTON CLICK DETECTED - handler is firing!")}
-          style={{ marginLeft: '10px', padding: '12px 24px', background: '#25D366', color: 'white', border: 'none', borderRadius: '20px', cursor: 'pointer' }}
+            onClick={() => alert("SEND BUTTON clicked!")}
+            style={{ marginLeft: '10px', padding: '12px 24px', background: '#25D366', color: 'white', border: 'none', borderRadius: '20px', cursor: 'pointer' }}
         >
           Send It
         </button>
