@@ -236,7 +236,7 @@ function PrivateChat() {
   // Decrypt messages + mark my own messages for correct left/right bubbles
     // Decrypt messages + mark my own messages for right/green bubbles
     useEffect(() => {
-      if (!cryptoKey || messages.length === 0) { alert('cryptKey or message.length missing'); return; }
+      if (!cryptoKey || messages.length === 0)  return; 
 
       const decryptAll = async () => {
 
@@ -297,7 +297,13 @@ function PrivateChat() {
           })
         );
 
-        setDecryptedMessages(decrypted);
+        setDecryptedMessages(prev => {
+          const prevIds = new Set(prev.map(m => m.id));
+          const newDecrypted = decrypted.filter(d => !prevIds.has(d.id));
+          return [...prev, ...newDecrypted];
+        });
+
+
       };
 
       decryptAll();
@@ -309,7 +315,7 @@ function PrivateChat() {
 
 // Replace your current auto-scroll useEffect with this
   useEffect(() => {
-    if (!messagesEndRef.current) { alert('messagesEndRef.current missing'); return; } 
+    if (!messagesEndRef.current)  return;  
 
     // Check if user is currently at bottom
     const isAtBottom = 
@@ -374,7 +380,7 @@ function PrivateChat() {
           console.warn('403 without invite key');
         }
         const errorData = await res.json().catch(() => ({}));
-        if (!isManual) { alert('isManual not there'); return; }  // silent fail on auto-poll
+        if (!isManual)  return;   // silent fail on auto-poll
         alert('Failed to load messages: ' + (errorData.error || res.status));
         return;
       }
@@ -383,7 +389,16 @@ function PrivateChat() {
       // Your existing merge logic here, e.g.:
       // setMessages(prev => [...prev, ...remoteMsgs.filter(r => !prev.some(p => p.id === r.id))]);
       // or just setMessages(remoteMsgs) if you want server-authoritative
-      setMessages(remoteMsgs);
+      // setMessages(remoteMsgs);
+
+      setMessages(prev => {
+        const prevIds = new Set(prev.map(m => m.id));
+        const newFromServer = remoteMsgs.filter(r => !prevIds.has(r.id));
+        return [...prev, ...newFromServer];
+      });
+
+
+
 
     } catch (err) {
       console.error('Poll error:', err);
@@ -430,8 +445,7 @@ function PrivateChat() {
 
 
   const copyKey = async () => {
-    // if (!cryptoKey) return;
-    if (!cryptoKey) { alert('cryptoKey missing'); return; }
+    if (!cryptoKey) return;
     const raw = await crypto.subtle.exportKey('raw', cryptoKey);
     const base64 = btoa(String.fromCharCode(...new Uint8Array(raw)));
     await navigator.clipboard.writeText(base64);
@@ -580,102 +594,110 @@ function PrivateChat() {
 
 
   const sendMessage = async () => {
-    console.log("sendMessage called");
+  console.log("1. sendMessage started");
 
-    if (!newMessage.trim()) {
-      console.log("Blocked: empty message");
-      return;
-    }
+  const messageText = newMessage.trim();
+  if (!messageText) {
+    console.log("Blocked: empty message");
+    return;
+  }
 
-    if (!cryptoKey) {
-      console.log("Blocked: no cryptoKey");
-      alert("No encryption key set – cannot send");
-      return;
-    }
+  console.log("2. Message text OK:", messageText);
 
-    console.log("Starting encryption...");
+  if (!cryptoKey) {
+    console.log("Blocked: no cryptoKey");
+    alert("No encryption key — cannot send");
+    return;
+  }
 
-    const messageText = newMessage.trim();
-    setNewMessage(''); // clear input
+  console.log("3. cryptoKey OK");
 
-    let base64;
-    try {
-      const encoder = new TextEncoder();
-      const encodedMessage = encoder.encode(messageText);
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const encryptedBuffer = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv },
-        cryptoKey,
-        encodedMessage
-      );
-      const encryptedArray = new Uint8Array(encryptedBuffer);
-      const combined = new Uint8Array(iv.length + encryptedArray.length);
-      combined.set(iv);
-      combined.set(encryptedArray, iv.length);
-      base64 = btoa(String.fromCharCode(...combined));
-      console.log("Encryption successful, base64 length:", base64.length);
-    } catch (err) {
-      console.error("Encryption failed:", err);
-      alert("Encryption error – cannot send");
-      setNewMessage(messageText);
-      return;
-    }
+  setNewMessage('');
 
-    // Optimistic update
-    const optimisticMsg = {
-      id: `local-${Date.now()}`,
-      chatId,
-      encrypted: base64,
-      created_at: new Date().toISOString(),
-      timestamp: Date.now(),
-      sender: 'me',
-      text: messageText
-    };
+  let base64;
+  try {
+    // your encryption code (keep exactly as is)
+    const encoder = new TextEncoder();
+    const encodedMessage = encoder.encode(messageText);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encryptedBuffer = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      cryptoKey,
+      encodedMessage
+    );
+    const encryptedArray = new Uint8Array(encryptedBuffer);
+    const combined = new Uint8Array(iv.length + encryptedArray.length);
+    combined.set(iv);
+    combined.set(encryptedArray, iv.length);
+    base64 = btoa(String.fromCharCode(...combined));
+    console.log("4. Encryption OK, base64 length:", base64.length);
+  } catch (err) {
+    console.error("Encryption error:", err);
+    alert("Encryption failed");
+    setNewMessage(messageText);
+    return;
+  }
 
-    console.log("Adding optimistic message:", optimisticMsg);
-
-    setMessages(prev => [...prev, optimisticMsg]);
-    setDecryptedMessages(prev => [...prev, optimisticMsg]); // yes – keep this line if you use decryptedMessages state
-
-    localStorage.setItem(`messages_${chatId}`, JSON.stringify([...messages, optimisticMsg]));
-
-    console.log("Starting POST fetch...");
-
-    try {
-      const url = 'https://i-msgnet-backend-production.up.railway.app/api/messages';
-      console.log("POST URL:", url);
-
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-        },
-        body: JSON.stringify({
-          chatId,
-          encrypted: base64,
-          lifespanHours: lifespanHours || 24
-        })
-      });
-
-      console.log("POST response:", res.status, res.ok ? 'OK' : 'NOT OK');
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.error("Send error from server:", res.status, errorData);
-        alert(`Send failed: ${res.status} - ${errorData.error || 'Unknown'}`);
-        throw new Error('Send failed');
-      }
-
-      console.log("Send succeeded!");
-      pollMessages(); // refresh
-
-    } catch (err) {
-      console.error("Full send error:", err.message, err.stack);
-      alert("Network error sending – check console");
-      setNewMessage(messageText); // restore
-    }
+  // Optimistic
+  const optimisticMsg = {
+    id: `local-${Date.now()}`,
+    chatId,
+    encrypted: base64,
+    created_at: new Date().toISOString(),
+    timestamp: Date.now(),
+    sender: 'me',
+    text: messageText
   };
+
+  console.log("5. Adding optimistic:", optimisticMsg);
+
+    setMessages(prev => {
+      if (prev.some(m => m.id === optimisticMsg.id)) return prev; // prevent duplicate
+      return [...prev, optimisticMsg];
+    });
+
+    setDecryptedMessages(prev => {
+      if (prev.some(m => m.id === optimisticMsg.id)) return prev;
+      return [...prev, optimisticMsg];
+    });
+
+  localStorage.setItem(`messages_${chatId}`, JSON.stringify([...messages, optimisticMsg]));
+
+  console.log("6. Starting POST...");
+
+  try {
+    const res = await fetch('https://i-msgnet-backend-production.up.railway.app/api/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+      },
+      body: JSON.stringify({
+        chatId,
+        encrypted: base64,
+        lifespanHours: lifespanHours || 24
+      })
+    });
+
+    console.log("7. POST done, status:", res.status);
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      console.error("Server error:", res.status, errorData);
+      alert(`Send failed: ${res.status}`);
+      throw new Error('Send failed');
+    }
+
+    console.log("8. Send success!");
+    pollMessages();
+
+  } catch (err) {
+    console.error("Send catch error:", err.message, err.stack);
+    alert("Send network error — check console");
+    setNewMessage(messageText);
+  }
+};
+
 
 
   const simulateIncoming = async () => {
