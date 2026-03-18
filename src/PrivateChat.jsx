@@ -356,7 +356,7 @@ function PrivateChat() {
       if (messagesEndRef.current) {
         const rect = messagesEndRef.current.getBoundingClientRect();
         const isAtBottom = rect.bottom <= window.innerHeight + 50;
-        if (isAtBottom) setHasNewMessages(false);
+//        if (isAtBottom) setHasNewMessages(false);
       }
     };
     window.addEventListener('scroll', checkScroll);
@@ -612,29 +612,28 @@ function PrivateChat() {
 
   
 
-  const sendMessage = async () => {
-  console.log("1. sendMessage started");
+ const sendMessage = async () => {
+  console.log("sendMessage STARTED");
 
-  const messageText = newMessage.trim();
-  if (!messageText) {
-    console.log("Blocked: empty message");
+  const text = newMessage.trim();
+  if (!text) {
+    console.log("Aborted: empty text");
     return;
   }
+  console.log("Text OK:", text);
 
-  console.log("2. Message text OK:", messageText);
-
+  console.log("cryptoKey check:", !!cryptoKey, cryptoKey ? "present" : "MISSING");
   if (!cryptoKey) {
-    console.log("Blocked: no cryptoKey");
-    alert("No encryption key — cannot send");
+    console.log("Aborted: no cryptoKey");
+    alert("No encryption key - cannot send (check demo mode or paste key)");
     return;
   }
-
-  console.log("3. cryptoKey OK");
 
   setNewMessage('');
 
   let base64;
   try {
+    console.log("Encryption START");
     // your encryption code (keep exactly as is)
     const encoder = new TextEncoder();
     const encodedMessage = encoder.encode(messageText);
@@ -649,45 +648,42 @@ function PrivateChat() {
     combined.set(iv);
     combined.set(encryptedArray, iv.length);
     base64 = btoa(String.fromCharCode(...combined));
-    console.log("4. Encryption OK, base64 length:", base64.length);
+ 
+   console.log("Encryption SUCCESS - base64 length:", base64.length);
   } catch (err) {
-    console.error("Encryption error:", err);
-    alert("Encryption failed");
-    setNewMessage(messageText);
+    console.error("Encryption FAILED:", err.message, err.stack);
+    alert("Encryption error - cannot send");
+    setNewMessage(text);
     return;
   }
 
-  // Optimistic
   const optimisticMsg = {
     id: `local-${Date.now()}`,
     chatId,
     encrypted: base64,
     created_at: new Date().toISOString(),
-    timestamp: Date.now(),
     sender: 'me',
-    text: messageText
+    text
   };
 
-  console.log("5. Adding optimistic:", optimisticMsg);
+  console.log("Optimistic created");
 
-    setMessages(prev => {
-      if (prev.some(m => m.id === optimisticMsg.id)) return prev; // prevent duplicate
-      return [...prev, optimisticMsg];
-    });
+  setMessages(prev => {
+    if (prev.some(m => m.id === optimisticMsg.id)) return prev;
+    return [...prev, optimisticMsg];
+  });
 
-    setDecryptedMessages(prev => {
-      if (prev.some(m => m.id === optimisticMsg.id)) return prev;
-      return [...prev, optimisticMsg];
-    });
+  setDecryptedMessages(prev => {
+    if (prev.some(m => m.id === optimisticMsg.id)) return prev;
+    return [...prev, optimisticMsg];
+  });
 
-
-
-    // After setMessages & setDecryptedMessages
   localStorage.setItem(`messages_${chatId}`, JSON.stringify([...messages, optimisticMsg]));
 
-  console.log("6. Starting POST...");
+  console.log("Optimistic added - attempting POST");
 
   try {
+    console.log("POST BEGIN");
     const res = await fetch('https://i-msgnet-backend-production.up.railway.app/api/messages', {
       method: 'POST',
       headers: {
@@ -701,22 +697,21 @@ function PrivateChat() {
       })
     });
 
-    console.log("7. POST done, status:", res.status);
+    console.log("POST RETURNED - status:", res.status);
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
       console.error("Server error:", res.status, errorData);
-      alert(`Send failed: ${res.status}`);
+      alert(`Send failed: ${res.status} - ${errorData.error || 'Unknown'}`);
       throw new Error('Send failed');
     }
 
-    console.log("8. Send success!");
+    console.log("POST SUCCESS");
     pollMessages();
 
   } catch (err) {
-    console.error("Send catch error:", err.message, err.stack);
-    alert("Send network error — check console");
-    setNewMessage(messageText);
+    console.error("POST catch:", err.message, err.stack);
+    alert("Network send error - check console");
   }
 };
 

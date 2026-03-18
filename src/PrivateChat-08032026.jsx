@@ -177,7 +177,7 @@ useEffect(() => {
     if (messagesEndRef.current) {
       const rect = messagesEndRef.current.getBoundingClientRect();
       const isAtBottom = rect.bottom <= window.innerHeight + 50;
-      if (isAtBottom) setHasNewMessages(false);
+      if (isAtBottom) setHasNewMessages(false); // what is this?
     }
   };
   window.addEventListener('scroll', checkScroll);
