@@ -233,82 +233,99 @@ function PrivateChat() {
   }, [chatId]);
 
 
-  // Decrypt
-  // Decrypt messages + mark my own messages for correct left/right bubbles
-    // Decrypt messages + mark my own messages for right/green bubbles
-    useEffect(() => {
-      if (!cryptoKey || messages.length === 0)  return; 
+// Decrypt
+// Decrypt messages + mark my own messages for correct left/right bubbles
+  // Decrypt messages + mark my own messages for right/green bubbles
+  useEffect(() => {
+    if (!cryptoKey || messages.length === 0)  return; 
 
-      const decryptAll = async () => {
-
-
-        const decrypted = await Promise.all(
-          messages
-          .filter(msg => msg.chatId === chatId)  // ← only current chat
-          .map(async (msg) => {
-            let text = "[Decryption failed]";
-            let isFromMe = false;
-
-            try {
-              // Inline decryption (this is the exact working version)
-              const combined = Uint8Array.from(atob(msg.encrypted), c => c.charCodeAt(0));
-              const iv = combined.slice(0, 12);
-              const data = combined.slice(12);
-
-              const buffer = await crypto.subtle.decrypt(
-                { name: 'AES-GCM', iv },
-                cryptoKey,
-                data
-              );
-
-              text = new TextDecoder().decode(buffer);
-
-              // Sender detection for bubbles (this is the important part)
-              const senderName = String(
-                msg.sender_username || 
-                msg.username || 
-                msg.from_username || 
-                msg.sender || 
-                msg.from_user || 
-                ''
-              );
-
-              isFromMe = senderName.toLowerCase() === (myUsername || '').toLowerCase();
-
-              // This log will tell us exactly why it matches or not
-              console.log("Sender detection →", { 
-                msgId: msg.id, 
-                senderName, 
-                myUsername, 
-                isFromMe 
-              });
-
-            } catch (err) {
-              console.error("Decrypt failed for msg", msg.id || "unknown", err.message);
-            }
+    const decryptAll = async () => {
 
 
-            return {
-              ...msg,
-              text: decrypted || '[decryption failed]',
-              sender: msg.sender || 'them'   // preserve 'me' from optimistic, default incoming to 'them' 18.03. 02:41 
-            };
+      const decrypted = await Promise.all(
+        messages
+        .filter(msg => msg.chatId === chatId)  // ← only current chat
+        .map(async (msg) => {
+          let text = "[Decryption failed]";
+          let isFromMe = false;
+
+          try {
+            // Inline decryption (this is the exact working version)
+            const combined = Uint8Array.from(atob(msg.encrypted), c => c.charCodeAt(0));
+            const iv = combined.slice(0, 12);
+            const data = combined.slice(12);
+
+            const buffer = await crypto.subtle.decrypt(
+              { name: 'AES-GCM', iv },
+              cryptoKey,
+              data
+            );
+
+            text = new TextDecoder().decode(buffer);
+
+            // Sender detection for bubbles (this is the important part)
+            const senderName = String(
+              msg.sender_username || 
+              msg.username || 
+              msg.from_username || 
+              msg.sender || 
+              msg.from_user || 
+              ''
+            );
+
+            isFromMe = senderName.toLowerCase() === (myUsername || '').toLowerCase();
+
+            // This log will tell us exactly why it matches or not
+            console.log("Sender detection →", { 
+              msgId: msg.id, 
+              senderName, 
+              myUsername, 
+              isFromMe 
+            });
+
+          } catch (err) {
+            console.error("Decrypt failed for msg", msg.id || "unknown", err.message);
+          }
 
 
-          })
-        );
-
-        setDecryptedMessages(prev => {
-          const prevIds = new Set(prev.map(m => m.id));
-          const newDecrypted = decrypted.filter(d => !prevIds.has(d.id));
-          return [...prev, ...newDecrypted];
-        });
+          return {
+            ...msg,
+            text: decrypted || '[decryption failed]',
+            sender: msg.sender || 'them'   // preserve 'me' from optimistic, default incoming to 'them' 18.03. 02:41 
+          };
 
 
-      };
+        })
+      );
 
-      decryptAll();
-    }, [messages, cryptoKey, myUsername]);
+      setDecryptedMessages(prev => {
+        const prevIds = new Set(prev.map(m => m.id));
+        const newDecrypted = decrypted.filter(d => !prevIds.has(d.id));
+        return [...prev, ...newDecrypted];
+      });
+
+
+    };
+
+    decryptAll();
+  }, [messages, cryptoKey, myUsername]);
+
+
+
+  useEffect(() => {
+    if (!chatId) return;
+
+    const saved = localStorage.getItem(`messages_${chatId}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setMessages(parsed);
+        // Optional: setDecryptedMessages(parsed) if you use it for render
+      } catch (e) {
+        console.error("Failed to load saved messages", e);
+      }
+    }
+  }, [chatId]);
 
 
 
@@ -593,6 +610,7 @@ function PrivateChat() {
     return 'Very strong ✓';
   };
 
+  
 
   const sendMessage = async () => {
   console.log("1. sendMessage started");
@@ -662,6 +680,9 @@ function PrivateChat() {
       return [...prev, optimisticMsg];
     });
 
+
+
+    // After setMessages & setDecryptedMessages
   localStorage.setItem(`messages_${chatId}`, JSON.stringify([...messages, optimisticMsg]));
 
   console.log("6. Starting POST...");
@@ -1384,7 +1405,11 @@ function PrivateChat() {
           boxSizing: 'border-box'
         }}>
 
-        {decryptedMessages.map((msg, idx) => (
+
+          {decryptedMessages
+          .filter(msg => msg.chatId === chatId)   // only show messages for current chat
+          .map((msg, idx) => (
+
           <div
             key={idx}
             className="message-bubble"
