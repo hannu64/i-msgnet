@@ -1518,7 +1518,11 @@ function PrivateChat() {
         />
         <button
           type="button"
-            onClick={() => alert("SEND BUTTON clicked!")}
+          onClick={() => {
+            console.log("SEND BUTTON CLICKED - very first line");
+            alert("Send button click detected!");
+            sendMessage();
+          }}
             style={{ marginLeft: '10px', padding: '12px 24px', background: '#25D366', color: 'white', border: 'none', borderRadius: '20px', cursor: 'pointer' }}
         >
           Send It
