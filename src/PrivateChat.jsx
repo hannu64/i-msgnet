@@ -107,28 +107,29 @@ function PrivateChat() {
   const [errorBanner, setErrorBanner] = useState('');
 
 
-  const sendMessage = useCallback(async () => {
-    console.log("sendMessage REAL FUNCTION STARTED");
+  const sendMessage = async () => {
+    console.log("sendMessage STARTED - real function");
 
     const text = newMessage.trim();
     if (!text) {
-      console.log("Aborted: empty");
+      console.log("Aborted: empty text");
       return;
     }
+    console.log("Text OK:", text);
 
     if (!cryptoKey) {
       console.log("Aborted: no cryptoKey");
-      alert("No key");
+      alert("No encryption key - cannot send");
       return;
     }
-
-    console.log("cryptoKey OK:", typeof cryptoKey);
+    console.log("cryptoKey OK");
 
     setNewMessage('');
 
     let base64;
     try {
       console.log("Encryption START");
+      // YOUR ENCRYPTION CODE HERE (keep as is)
       const encoder = new TextEncoder();
       const encodedMessage = encoder.encode(text);
       const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -142,7 +143,7 @@ function PrivateChat() {
       combined.set(iv);
       combined.set(encryptedArray, iv.length);
       base64 = btoa(String.fromCharCode(...combined));
-      console.log("Encryption SUCCESS - base64 len:", base64.length);
+      console.log("Encryption SUCCESS - length:", base64.length);
     } catch (err) {
       console.error("ENCRYPTION CRASH:", err.message, err.stack);
       alert("Encryption failed - check console");
@@ -159,7 +160,7 @@ function PrivateChat() {
       text
     };
 
-    console.log("Optimistic OK");
+    console.log("Optimistic created");
 
     setMessages(prev => [...prev, optimisticMsg]);
     setDecryptedMessages(prev => [...prev, optimisticMsg]);
@@ -187,7 +188,7 @@ function PrivateChat() {
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        console.error("POST SERVER ERROR:", res.status, errorData);
+        console.error("Server error:", res.status, errorData);
         alert(`Send failed: ${res.status}`);
         return;
       }
@@ -196,10 +197,10 @@ function PrivateChat() {
       pollMessages();
 
     } catch (err) {
-      console.error("POST NETWORK ERROR:", err.message, err.stack);
-      alert("Send network error - check console");
+      console.error("POST catch:", err.message, err.stack);
+      alert("Network send error");
     }
-  }, [newMessage, cryptoKey, chatId, lifespanHours, pollMessages, setNewMessage, setMessages, setDecryptedMessages]);
+  };
 
 
   useEffect(() => {
