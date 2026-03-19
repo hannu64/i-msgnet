@@ -107,7 +107,7 @@ function PrivateChat() {
   const [errorBanner, setErrorBanner] = useState('');
 
 
-  const sendMessage = async () => {
+  const sendMessage = useCallback(async () => {
     console.log("sendMessage START - real function called");
 
     const text = newMessage.trim();
@@ -199,7 +199,7 @@ function PrivateChat() {
       console.error("POST NETWORK ERROR:", err.message, err.stack);
       alert("Send network error - check console");
     }
-  };
+  }, [newMessage, cryptoKey, chatId, lifespanHours, pollMessages, setNewMessage, setMessages, setDecryptedMessages]);
 
 
   useEffect(() => {
