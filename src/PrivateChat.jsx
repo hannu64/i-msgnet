@@ -477,6 +477,14 @@ function PrivateChat() {
         }
       });
 
+
+      if (inviteKey && (res.status === 200 || res.status === 403)) {
+        console.log("Clearing inviteKey after poll");
+        setInviteKey(null);
+        window.history.replaceState({}, '', `/chat/${chatId}`);
+      }
+
+
       // Handle invite key cleanup on BOTH success AND "already used" error
       if (hasInviteParam) {
         if (res.ok || res.status === 403) {   // ← key change here
@@ -487,22 +495,42 @@ function PrivateChat() {
         }
       }
 
+
       if (!res.ok) {
-        if (res.status === 403 && !hasInviteParam) {
-          // Normal 403 without key → probably not participant anymore, handle differently if needed
-          console.warn('403 without invite key');
-        }
         const errorData = await res.json().catch(() => ({}));
-        if (!isManual)  return;   // silent fail on auto-poll
+
+        console.error("Poll FAILED - status:", res.status, "error:", errorData);
+
+        if (res.status === 403 && hasInviteParam) {
+          console.log("403 with inviteKey - treating as already accepted, clearing key");
+          setInviteKey(null);
+          window.history.replaceState({}, '', `/chat/${chatId}`);
+        } else if (res.status === 403 && !hasInviteParam) {
+          // Your original comment/log
+          console.warn('403 without invite key - possibly not participant anymore');
+        }
+
+        if (!isManual) return; // silent fail on auto-poll
+
         alert('Failed to load messages: ' + (errorData.error || res.status));
         return;
       }
+
 
       const remoteMsgs = await res.json();
       // Your existing merge logic here, e.g.:
       // setMessages(prev => [...prev, ...remoteMsgs.filter(r => !prev.some(p => p.id === r.id))]);
       // or just setMessages(remoteMsgs) if you want server-authoritative
-      // setMessages(remoteMsgs);
+ 
+      setMessages(prev => {
+        const prevIds = new Set(prev.map(m => m.id));
+        const newFromServer = remoteMsgs.filter(r => !prevIds.has(r.id));
+        return [...prev, ...newFromServer];
+      });
+
+
+
+      console.log("Poll response - chatId:", chatId, "messages received:", remoteMsgs.length, "first msg:", remoteMsgs[0] || "empty");
 
       setMessages(prev => {
         const prevIds = new Set(prev.map(m => m.id));
@@ -518,6 +546,7 @@ function PrivateChat() {
       if (isManual) alert('Network error loading messages');
     }
   };
+
 
 
   useEffect(() => {
