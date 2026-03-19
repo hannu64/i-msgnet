@@ -107,8 +107,8 @@ function PrivateChat() {
   const [errorBanner, setErrorBanner] = useState('');
 
 
-  const sendMessage = async () => {
-    console.log("sendMessage STARTED - real function");
+  const handleSendMessage = async () => {
+    console.log("handleSendMessage STARTED - real function");
 
     const text = newMessage.trim();
     if (!text) {
@@ -775,8 +775,11 @@ function PrivateChat() {
   };
 
   return (
+    
 
 <React.Fragment>
+
+  console.log("Component rendering - handleSendMessage type:", typeof handleSendMessage);
 
     {errorBanner && (
     <div style={{ background: '#dc3545', color: 'white', padding: '12px', marginBottom: '16px', borderRadius: '6px' }}>
@@ -1506,11 +1509,11 @@ function PrivateChat() {
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Type a message"
           style={{ flex: 1, padding: '12px', border: '1px solid #ccc', borderRadius: '20px' }}
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
+          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
         />
         <button
           type="button"
-          onClick={sendMessage}  // ← direct reference, no arrow
+          onClick={handleSendMessage}  // ← direct reference, no arrow
             style={{ marginLeft: '10px', padding: '12px 24px', background: '#25D366', color: 'white', border: 'none', borderRadius: '20px', cursor: 'pointer' }}
         >
           Send It
