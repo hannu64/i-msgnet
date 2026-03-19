@@ -108,20 +108,20 @@ function PrivateChat() {
 
 
   const sendMessage = useCallback(async () => {
-    console.log("sendMessage START - real function called");
+    console.log("sendMessage REAL FUNCTION STARTED");
 
     const text = newMessage.trim();
     if (!text) {
-      console.log("Aborted: empty text");
+      console.log("Aborted: empty");
       return;
     }
-    console.log("Text OK:", text);
 
     if (!cryptoKey) {
-      console.log("cryptoKey MISSING - cannot encrypt");
-      alert("No encryption key available - cannot send (demo mode or key not set?)");
+      console.log("Aborted: no cryptoKey");
+      alert("No key");
       return;
     }
+
     console.log("cryptoKey OK:", typeof cryptoKey);
 
     setNewMessage('');
