@@ -212,6 +212,28 @@ function PrivateChat() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        console.log("Loaded", parsed.length, "saved messages");
+        setMessages(parsed);
+        setDecryptedMessages(parsed); // if you use decryptedMessages for render
+      } catch (e) {
+        console.error("LocalStorage load error:", e);
+      }
+    } else {
+      console.log("No saved messages in storage");
+    }
+  }, [chatId]);
+
+
+
+  useEffect(() => {
+    if (!chatId) return;
+
+    console.log("Loading localStorage for chat:", chatId);
+
+    const saved = localStorage.getItem(`messages_${chatId}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
         console.log("Loaded", parsed.length, "messages from storage");
         setMessages(parsed);
         // If decryption needed on load, trigger it
@@ -498,6 +520,13 @@ function PrivateChat() {
       });
 
       if (inviteKey) {
+        console.log("Poll - clearing inviteKey (prevent 403)");
+        setInviteKey(null);
+        window.history.replaceState({}, '', `/chat/${chatId}`);
+      }
+
+
+      if (inviteKey) {
         console.log("Forcing clear inviteKey on poll");
         setInviteKey(null);
         window.history.replaceState({}, '', `/chat/${chatId}`);
@@ -547,6 +576,15 @@ function PrivateChat() {
       // Your existing merge logic here, e.g.:
       // setMessages(prev => [...prev, ...remoteMsgs.filter(r => !prev.some(p => p.id === r.id))]);
       // or just setMessages(remoteMsgs) if you want server-authoritative
+
+      console.log("POLL RESULT:", {
+        chatId,
+        status: res.status,
+        inviteKeyUsed: !!inviteKey,
+        messagesCount: remoteMsgs.length,
+        firstMsg: remoteMsgs[0] ? JSON.stringify(remoteMsgs[0]) : "empty",
+        error: remoteMsgs.error || null
+      });
 
       console.log("Poll response:", {
         chatId,
