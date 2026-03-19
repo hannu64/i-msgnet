@@ -107,18 +107,19 @@ function PrivateChat() {
   const [errorBanner, setErrorBanner] = useState('');
 
 
-  const sendMessage = useCallback(async () => {
-    console.log("sendMessage REAL FUNCTION STARTED");
+  const sendMessage = async () => {
+    console.log("sendMessage START - real function called");
 
     const text = newMessage.trim();
     if (!text) {
-      console.log("Aborted: empty");
+      console.log("Aborted: empty text");
       return;
     }
+    console.log("Text OK:", text);
 
     if (!cryptoKey) {
-      console.log("Aborted: no cryptoKey");
-      alert("No key");
+      console.log("cryptoKey MISSING - cannot encrypt");
+      alert("No encryption key available - cannot send (demo mode or key not set?)");
       return;
     }
     console.log("cryptoKey OK:", typeof cryptoKey);
@@ -198,7 +199,7 @@ function PrivateChat() {
       console.error("POST NETWORK ERROR:", err.message, err.stack);
       alert("Send network error - check console");
     }
-  }, [newMessage, cryptoKey, chatId, lifespanHours, pollMessages, setNewMessage, setMessages, setDecryptedMessages]);
+  };
 
 
   useEffect(() => {
