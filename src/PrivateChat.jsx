@@ -234,6 +234,28 @@ function PrivateChat() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        console.log("Loaded", parsed.length, "saved messages");
+        setMessages(parsed);
+        setDecryptedMessages(parsed); // if you use decryptedMessages for render
+      } catch (e) {
+        console.error("LocalStorage load error:", e);
+      }
+    } else {
+      console.log("No saved messages in storage");
+    }
+  }, [chatId]);
+
+
+
+  useEffect(() => {
+    if (!chatId) return;
+
+    console.log("Loading localStorage for chat:", chatId);
+
+    const saved = localStorage.getItem(`messages_${chatId}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
         console.log("Loaded", parsed.length, "messages from storage");
         setMessages(parsed);
         // If decryption needed on load, trigger it
@@ -517,7 +539,15 @@ function PrivateChat() {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }
+
       });
+
+
+      if (inviteKey) {
+        console.log("Poll - clearing inviteKey");
+        setInviteKey(null);
+        window.history.replaceState({}, '', `/chat/${chatId}`);
+      }
 
       if (inviteKey) {
         console.log("Poll - clearing inviteKey (prevent 403)");
