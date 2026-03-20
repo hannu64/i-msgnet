@@ -480,15 +480,7 @@ function PrivateChat() {
         window.history.replaceState({}, '', `/chat/${chatId}`);
       }
 
-      // Handle invite key cleanup on BOTH success AND "already used" error
-      if (hasInviteParam) {
-        if (res.ok || res.status === 403) {   // ← key change here
-          console.log(res.ok ? 'Invite accepted (200)' : 'Invite already used (403) — clearing key');
-          setInviteKey(null);
-          // Clean URL without reload
-          window.history.replaceState({}, '', `/chat/${chatId}`);  // or window.location.pathname if needed
-        }
-      }
+
 
 
       if (!res.ok) {
@@ -496,11 +488,7 @@ function PrivateChat() {
 
         console.error("Poll FAILED - status:", res.status, "error:", errorData);
 
-        if (res.status === 403 && hasInviteParam) {
-          console.log("403 with inviteKey - treating as already accepted, clearing key");
-          setInviteKey(null);
-          window.history.replaceState({}, '', `/chat/${chatId}`);
-        } else if (res.status === 403 && !hasInviteParam) {
+        if (res.status === 403 && !hasInviteParam) {
           // Your original comment/log
           console.warn('403 without invite key - possibly not participant anymore');
         }
