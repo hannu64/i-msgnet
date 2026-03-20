@@ -214,97 +214,13 @@ function PrivateChat() {
         const parsed = JSON.parse(saved);
         console.log("Loaded", parsed.length, "saved messages");
         setMessages(parsed);
-        setDecryptedMessages(parsed); // sync both states
-      } catch (e) {
-        console.error("LocalStorage load error:", e);
-      }
-    } else {
-      console.log("No saved messages in storage");
-    }
-  }, [chatId]);
-
-
-
-  useEffect(() => {
-    if (!chatId) return;
-
-    console.log("Loading localStorage for chat:", chatId);
-
-    const saved = localStorage.getItem(`messages_${chatId}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        console.log("Loaded", parsed.length, "saved messages");
-        setMessages(parsed);
-        setDecryptedMessages(parsed); // if using decryptedMessages
+        setDecryptedMessages(parsed);
       } catch (e) {
         console.error("LocalStorage load error:", e);
       }
     }
   }, [chatId]);
 
-
-  useEffect(() => {
-    if (!chatId) return;
-
-    console.log("Loading localStorage for chat:", chatId);
-
-    const saved = localStorage.getItem(`messages_${chatId}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        console.log("Loaded", parsed.length, "saved messages");
-        setMessages(parsed);
-        setDecryptedMessages(parsed); // if you use decryptedMessages for render
-      } catch (e) {
-        console.error("LocalStorage load error:", e);
-      }
-    } else {
-      console.log("No saved messages in storage");
-    }
-  }, [chatId]);
-
-
-
-  useEffect(() => {
-    if (!chatId) return;
-
-    console.log("Loading localStorage for chat:", chatId);
-
-    const saved = localStorage.getItem(`messages_${chatId}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        console.log("Loaded", parsed.length, "saved messages");
-        setMessages(parsed);
-        setDecryptedMessages(parsed); // if you use decryptedMessages for render
-      } catch (e) {
-        console.error("LocalStorage load error:", e);
-      }
-    } else {
-      console.log("No saved messages in storage");
-    }
-  }, [chatId]);
-
-
-
-  useEffect(() => {
-    if (!chatId) return;
-
-    console.log("Loading localStorage for chat:", chatId);
-
-    const saved = localStorage.getItem(`messages_${chatId}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        console.log("Loaded", parsed.length, "messages from storage");
-        setMessages(parsed);
-        // If decryption needed on load, trigger it
-      } catch (e) {
-        console.error("LocalStorage parse error:", e);
-      }
-    }
-  }, [chatId]);
 
 
 
@@ -405,18 +321,7 @@ function PrivateChat() {
 
 
 
-  useEffect(() => {
-    const saved = localStorage.getItem(`messages_${chatId}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setMessages(parsed);
-        // Optionally decrypt them if needed
-      } catch (e) {
-        console.error("Failed to load local messages", e);
-      }
-    }
-  }, [chatId]);
+
 
   // Block filter: redirect if current chat is blocked
   useEffect(() => {
@@ -512,21 +417,6 @@ function PrivateChat() {
 
 
 
-  useEffect(() => {
-    if (!chatId) return;
-
-    const saved = localStorage.getItem(`messages_${chatId}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setMessages(parsed);
-        // Optional: setDecryptedMessages(parsed) if you use it for render
-      } catch (e) {
-        console.error("Failed to load saved messages", e);
-      }
-    }
-  }, [chatId]);
-
 
 
   // Auto-scroll
@@ -590,27 +480,6 @@ function PrivateChat() {
         window.history.replaceState({}, '', `/chat/${chatId}`);
       }
 
-      if (inviteKey) {
-        console.log("Poll - clearing inviteKey (prevent 403)");
-        setInviteKey(null);
-        window.history.replaceState({}, '', `/chat/${chatId}`);
-      }
-
-
-      if (inviteKey) {
-        console.log("Forcing clear inviteKey on poll");
-        setInviteKey(null);
-        window.history.replaceState({}, '', `/chat/${chatId}`);
-      }
-
-
-      if (inviteKey && (res.status === 200 || res.status === 403)) {
-        console.log("Clearing inviteKey after poll");
-        setInviteKey(null);
-        window.history.replaceState({}, '', `/chat/${chatId}`);
-      }
-
-
       // Handle invite key cleanup on BOTH success AND "already used" error
       if (hasInviteParam) {
         if (res.ok || res.status === 403) {   // ← key change here
@@ -649,6 +518,16 @@ function PrivateChat() {
       // or just setMessages(remoteMsgs) if you want server-authoritative
 
 
+      console.log("POLL RESPONSE:", {
+        chatId,
+        status: res.status,
+        inviteKey: !!inviteKey,
+        count: remoteMsgs.length,
+        timestamps: remoteMsgs.map(m => m.created_at || "no time"),
+        firstId: remoteMsgs[0]?.id || "empty"
+      });
+
+
       console.log("POLL RESPONSE FULL:", {
         chatId,
         status: res.status,
@@ -672,7 +551,7 @@ function PrivateChat() {
         error: remoteMsgs.error || null
       });
 
-      console.log("Poll response:", {
+      console.log("Poll response 2:", {
         chatId,
         status: res.status,
         inviteKeyUsed: !!inviteKey,
@@ -681,14 +560,6 @@ function PrivateChat() {
         error: remoteMsgs.error || null
       });
 
-      console.log("POLL RESPONSE v2:", {
-        chatId,
-        status: res.status,
-        inviteKey: !!inviteKey,
-        messagesCount: remoteMsgs.length,
-        messagesTimestamps: remoteMsgs.map(m => m.created_at || "no timestamp"),
-        firstMsgId: remoteMsgs[0]?.id || "empty"
-      });      
 
       setMessages(prev => {
         const prevIds = new Set(prev.map(m => m.id));
