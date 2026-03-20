@@ -214,6 +214,28 @@ function PrivateChat() {
         const parsed = JSON.parse(saved);
         console.log("Loaded", parsed.length, "saved messages");
         setMessages(parsed);
+        setDecryptedMessages(parsed); // sync both states
+      } catch (e) {
+        console.error("LocalStorage load error:", e);
+      }
+    } else {
+      console.log("No saved messages in storage");
+    }
+  }, [chatId]);
+
+
+
+  useEffect(() => {
+    if (!chatId) return;
+
+    console.log("Loading localStorage for chat:", chatId);
+
+    const saved = localStorage.getItem(`messages_${chatId}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        console.log("Loaded", parsed.length, "saved messages");
+        setMessages(parsed);
         setDecryptedMessages(parsed); // if using decryptedMessages
       } catch (e) {
         console.error("LocalStorage load error:", e);
@@ -469,9 +491,9 @@ function PrivateChat() {
           return {
             ...msg,
             text: decrypted || '[decryption failed]',
-            sender: msg.sender || 'them'   // preserve 'me' from optimistic, default incoming to 'them' 18.03. 02:41 
+            created_at: msg.created_at || msg.timestamp || new Date().toISOString(),  // preserve original timestamp
+            sender: msg.sender || 'them'
           };
-
 
         })
       );
@@ -658,7 +680,16 @@ function PrivateChat() {
         firstMessage: remoteMsgs[0] || "empty",
         error: remoteMsgs.error || null
       });
- 
+
+      console.log("POLL RESPONSE v2:", {
+        chatId,
+        status: res.status,
+        inviteKey: !!inviteKey,
+        messagesCount: remoteMsgs.length,
+        messagesTimestamps: remoteMsgs.map(m => m.created_at || "no timestamp"),
+        firstMsgId: remoteMsgs[0]?.id || "empty"
+      });      
+
       setMessages(prev => {
         const prevIds = new Set(prev.map(m => m.id));
         const newFromServer = remoteMsgs.filter(r => !prevIds.has(r.id));
